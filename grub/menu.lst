@@ -1,0 +1,6 @@
+title Story OS
+	root (cd)
+	kernel /kernel
+	module /keyboard
+	module /app1
+	module /app2
