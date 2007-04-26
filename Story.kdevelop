@@ -10,7 +10,7 @@
       <part>kdevrbdebugger</part>
       <part>kdevvisualboyadvance</part>
     </ignoreparts>
-    <projectdirectory>/root/story/story-os/trunk</projectdirectory>
+    <projectdirectory>/root/story-os/trunk</projectdirectory>
     <absoluteprojectpath>true</absoluteprojectpath>
     <description/>
     <versioncontrol>kdevsubversion</versioncontrol>
@@ -21,13 +21,13 @@
     <run>
       <mainprogram>/usr/bin/qemu</mainprogram>
       <directoryradio>custom</directoryradio>
-      <customdirectory>/root/story/story-os/trunk</customdirectory>
+      <customdirectory>/root/story-os/trunk</customdirectory>
       <programargs>-cdrom disk.iso -s -no-kqemu</programargs>
       <terminal>false</terminal>
       <autocompile>true</autocompile>
       <envvars/>
       <globaldebugarguments/>
-      <globalcwd>/root/story/story-os/trunk</globalcwd>
+      <globalcwd>/root/story-os/trunk</globalcwd>
       <useglobalprogram>false</useglobalprogram>
       <autoinstall>false</autoinstall>
       <autokdesu>false</autokdesu>
