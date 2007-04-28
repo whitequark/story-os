@@ -23,16 +23,13 @@
 Paging::Paging()
 {
 int i,j;
-assert(sizeof(PageFrame) == 4);
-assert(sizeof(PageDirectory) == 0x1000);
-assert(sizeof(PageTable) == 0x1000);
 
+hal->pagedir = (PageDirectory*) hal->mm->alloc(1);
 memset(hal->pagedir, 0, 0x1000); //this will clear 'present' bit in whole directory
 
-unsigned int page_tables = (unsigned int) hal->mm->alloc(0x400);
-memset((void*) page_tables, 0, 0x1000*0x400); //this will clear 'present' bit in all tables
+unsigned int page_tables = (unsigned int) hal->mm->alloc(0x100);
 
-for(i = 0; i < 0x200 /* 0x7fffffff */; i++)
+for(i = 0; i < 0x100; i++)
  {
  PageTable* table = (PageTable*) (page_tables + i * 0x1000);
  hal->pagedir->table[i] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE;

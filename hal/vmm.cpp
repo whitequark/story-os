@@ -30,38 +30,21 @@ VirtualMemoryManager::VirtualMemoryManager()
 int i, j;
 directory = (PageDirectory*) hal->mm->alloc(1);
 memset(directory, 0, 0x1000); //this will clear 'present' bit in whole directory
-
-unsigned int page_tables = (unsigned int) hal->mm->alloc(0x200);
-memset((void*) page_tables, 0, 0x1000*0x200); //this will clear 'present' bit in all tables
-
-for(i = 0; i < 0x200 /* 0x7fffffff */; i++)
- {
- PageTable* table = (PageTable*) (page_tables + i * 0x1000);
- directory->table[i] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE;
- 
- int count = (i == 0) ? 0x399 : 0x400;
- j = (i == 0) ? 1 : 0;
- for(; j < count; j++)
-  {
-  unsigned int address = (i * 0x400 + j) << 12;
-  table->page[j] = address | PAGE_PRESENT | PAGE_WRITABLE;
-  }
- }
-
-for(i = 0; i < 0x80000; i++)
- page_bitmap[i] = PAGE_ALLOCATED;
+memcpy(directory, hal->pagedir, 512);
+for(i = 0; i < 0x40000; i++)
+ set_bit(i);
 }
 
 void* VirtualMemoryManager::alloc(unsigned int count)
 {
 int i;
-for(i = 0x80000; i < 0x100000; i++)
- if(page_bitmap[i] == PAGE_FREE)
+for(i = 0x40000; i < 0x100000; i++)
+ if(!get_bit(i))
   {
   int j;
   bool ok = true;
   for(j = i+1; j < i + count; j++)
-   if(page_bitmap[i] != PAGE_FREE)
+   if(get_bit(i))
     {
     ok = false;
     break;
@@ -72,12 +55,13 @@ for(i = 0x80000; i < 0x100000; i++)
   printf("vmm: found free block at %X length %i\n", i,  count);
   #endif
   unsigned int phys = (unsigned int) hal->mm->alloc(count);
-  page_bitmap[i] = PAGE_ALLOCATED | (phys >> 12);
-  hal->paging->set_pte(directory, i, phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER); //TODO user mode?
+  set_bit(i);
+  hal->paging->set_pte(directory, i, phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+  printf("/valloc:%i/", count);
   for(j = i+1; j < i+count; j++)
    {
-   page_bitmap[j] = PAGE_ALLOCATED;
-   hal->paging->set_pte(directory, j, (phys + (j << 12)) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER); //TODO user mode?
+   set_bit(j);
+   hal->paging->set_pte(directory, j, (phys + (j << 12)) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
    }
   return (void*) (i << 12);
   }
@@ -86,6 +70,7 @@ return NULL;
 
 void VirtualMemoryManager::free(void* address)
 {
+hal->panic("VFREE called!");
 if(address == NULL)
  return;
 unsigned int page = ((unsigned int) address) >> 12;
@@ -95,7 +80,6 @@ if(!(page_bitmap[page] & PAGE_ALLOCATED))
  hal->panic("Attempt to free unallocated memory page: %X\n", address);
 if(!(page_bitmap[page] & ~PAGE_ALLOCATED))
  hal->panic("Attempt to free zero-length memory block: %X\n", address);
-free(physical(address));
 page_bitmap[page] = PAGE_ALLOCATED;
 int i;
 for(i = page; ; i++)
@@ -113,43 +97,18 @@ void VirtualMemoryManager::load()
 hal->paging->load_cr3(directory);
 }
 
-void VirtualMemoryManager::show()
-{
-int i;
-for(i = 0x80000; i < 0x100000; i++)
- if(page_bitmap[i] & PAGE_ALLOCATED)
-  {
-  if(page_bitmap[i] & (~PAGE_ALLOCATED))
-   printf("vmm: block %X -> %X\n", i << 12, (page_bitmap[i] & (~PAGE_ALLOCATED)) << 12);
-  }
- else if(page_bitmap[i] & PAGE_MAPPED)
-  {
-  if(page_bitmap[i] & (~PAGE_MAPPED))
-   printf("vmm: block %X -> %X\n", i << 12, (page_bitmap[i] & (~PAGE_MAPPED)) << 12);
-  }
-}
-
-void* VirtualMemoryManager::physical(void* virt)
-{
-void* phys = (void*) ((page_bitmap[(unsigned int)virt >> 12] & (~PAGE_ALLOCATED)) << 12);
-#ifdef _DEBUGGING_VMM_
-printf("vmm: physical address of %X = %X\n", virt, phys);
-#endif
-return phys;
-}
-
 VirtualMemoryManager::~VirtualMemoryManager()
 {
 int i;
-for(i = 0; i < 0x100000; i++)
- if((page_bitmap[i] & ~PAGE_ALLOCATED) && !(page_bitmap[i] & PAGE_MAPPED))
+for(i = 0x40000; i < 0x100000; i++)
+ if(get_bit(i))
   {
   #ifdef _DEBUGGING_VMM_
   printf("vmm: freeing %X = %X\n", i << 12, (page_bitmap[i] & ~PAGE_ALLOCATED) << 12);
   #endif
-  hal->mm->free((void*) ((page_bitmap[i] & ~PAGE_ALLOCATED) << 12));
+  free((void*) (i << 12));
   }
-hal->mm->free((void*) (directory->table[0] & 0xFFFFF000));
+//TODO free tables
 hal->mm->free(directory);
 }
 
@@ -159,7 +118,7 @@ unsigned int i;
 for(i = 0; i < count; i++)
  {
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
- page_bitmap[virt >> 12] = PAGE_MAPPED | (phys >> 12);
+ set_bit(virt >> 12);
  #ifdef _DEBUGGING_VMM_
  printf("vmm: mapping 0x%X to 0x%X (flags 0x%x)\n", ((virt >> 12) + i) << 12, (phys + (i << 12)), attr);
  #endif
@@ -169,4 +128,19 @@ for(i = 0; i < count; i++)
 unsigned int VirtualMemoryManager::get_directory()
 {
 return (unsigned int)directory;
+}
+
+inline void VirtualMemoryManager::set_bit(unsigned int page)
+{
+page_bitmap[page / 32] |= (1 << page % 32);
+}
+
+inline bool VirtualMemoryManager::get_bit(unsigned int page)
+{
+return (page_bitmap[page / 32] & (1 << page % 32)) != 0;
+}
+
+inline void VirtualMemoryManager::reset_bit(unsigned int page)
+{
+page_bitmap[page / 32] &= ~(1 << page % 32);
 }

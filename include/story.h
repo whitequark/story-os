@@ -9,13 +9,13 @@
 #include <version.h>
 
 //#define _DEBUGGING_TASKMAN_
-//#define _DEBUGGING_VMM_
+#define _DEBUGGING_VMM_
 //#define _DEBUGGING_MM_
 //#define _DEBUGGING_PAGING_
 //#define _DEBUGGING_TASKSWITCHER_
 //#define _DEBUGGING_EXECUTABLE_LOADER_
 //#define _DEBUGGING_ELF_LOADER_
-#define _DEBUGGING_INTERFACE_
+//#define _DEBUGGING_INTERFACE_
 
 //#define _ENABLE_KERNEL_SERIAL_
 //#define _ENABLE_SERIAL_TERMINAL

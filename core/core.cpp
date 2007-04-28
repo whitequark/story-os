@@ -28,6 +28,9 @@ Core::Core(multiboot_info_t* mbi)
 {
 printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 
+unsigned int memory_before = hal->mm->free_memory();
+unsigned int memory_after;
+
 //printf("Messenger... ");
 messenger = new Messenger;
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
@@ -36,13 +39,15 @@ messenger = new Messenger;
 interfaces = new InterfaceManager;
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
-printf("%zCOMPLETE%z\n\n", GREEN, LIGHTGRAY);
+memory_after = hal->mm->free_memory();
+printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
+memory_before = hal->mm->free_memory();
 
 bool errors_found = false;
 
 if(mbi->mods_count > 0)
  {
- printf("Loading modules (detected %i):\n", mbi->mods_count);
+ printf("%zLoading modules%z (detected %i):\n", GREEN, LIGHTGRAY, mbi->mods_count);
  
  module_t* mod;
  for(mod = (module_t*)mbi->mods_addr; mod->mod_start != NULL; mod++)
@@ -63,9 +68,13 @@ if(mbi->mods_count > 0)
  }
 else
  hal->panic("No modules detected!\n");
+
+memory_after = hal->mm->free_memory();
 if(errors_found)
- printf("%zErrors when loading modules!%z\n\n", RED, LIGHTGRAY);
-printf("\n");
+ printf("%zErrors when loading modules!%z (-%i KB)\n", RED, LIGHTGRAY, (memory_before - memory_after) / 0x400);
+else
+ printf("%zLoaded successfully%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
+printf("Free memory: %i KB\n\n", hal->mm->free_memory() / 0x400);
 }
 
 Task* Core::load_executable(unsigned int start, unsigned int size, char* command_line)
@@ -102,6 +111,7 @@ printf("load_elf: entry point is 0x%X\n", header->e_entry);
 #endif
 
 VirtualMemoryManager* vmm = new VirtualMemoryManager;
+
 Elf32_Phdr* pheader = (Elf32_Phdr*) (start + header->e_phoff);
 Elf32_Phdr* p;
 for(p = pheader; p < pheader + header->e_phnum; p++)

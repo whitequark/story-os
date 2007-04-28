@@ -32,9 +32,9 @@ free_pages = count_pages - reserved_pages;
 for(i = 0; i < count_pages; i++)
  {
  if(i >= reserved_pages)
-  page_bitmap[i] = PAGE_FREE;
+  reset_bit(i);
  else
-  page_bitmap[i] = PAGE_ALLOCATED;
+  set_bit(i);  
  }
 safe_printf = false;
 }
@@ -47,28 +47,29 @@ if(safe_printf)
  printf("/mm:+%i/", count);
 #endif
 unsigned int free_count = 0;
-free_pages -= count;
 for(i = 0; i < count_pages; i++)
  {
- if(page_bitmap[i] & PAGE_ALLOCATED) 
+ if(get_bit(i)) 
   free_count = 0;
  else
   free_count++;
  if(free_count == count)
   {
   int first_page = i - free_count + 1;
-  page_bitmap[first_page] = PAGE_ALLOCATED | count;
+  set_bit(first_page);
   int n;
   for(n = 1; n < count; n++)
-   page_bitmap[first_page + n] = PAGE_ALLOCATED;
+   set_bit(first_page + n);
+  free_pages -= count;
   return (void*) (first_page << 12);
   }
  }
-hal->panic("%zSystem low on memory: requested %i pages%z\n", LIGHTRED, count, LIGHTGRAY); //TODO maybe not error?
+return NULL;
 }
 
 void MemoryManager::free(void* address)
 {
+hal->panic("FREE called!");
 if(address == NULL)
  return;
 unsigned int page = ((unsigned int) address) >> 12;
@@ -95,4 +96,19 @@ return free_pages << 12;
 void MemoryManager::set_safe_printf()
 {
 safe_printf = true;
+}
+
+inline void MemoryManager::set_bit(unsigned int page)
+{
+page_bitmap[page / 32] |= (1 << page % 32);
+}
+
+inline bool MemoryManager::get_bit(unsigned int page)
+{
+return (page_bitmap[page / 32] & (1 << page % 32)) != 0;
+}
+
+inline void MemoryManager::reset_bit(unsigned int page)
+{
+page_bitmap[page / 32] &= ~(1 << page % 32);
 }

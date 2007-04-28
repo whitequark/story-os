@@ -43,9 +43,8 @@
 
 				All my stuff: begins @ 1M
 0010 0000-FEBF FFFF			Extended memory
+	0010 0000-001F FFFF		GRUB
 	0020 0000-003F FFFF		Kernel & modules				4M
-	0040 0000-0040 0FFF		Kernel Page Directory
-	0040 1000-0040 1FFF		Memory manager
 	0040 2000-XXXX XXXX		Free memory
 
 FEC0 0000-FFFF FFFF			Internal stuff
@@ -61,7 +60,6 @@ FEC0 0000-FFFF FFFF			Internal stuff
 5		Application TSS
 6		Scheduler TSS
 */
-#define MM_POSITION			0x00100000
 
 HAL* hal;
 
@@ -70,50 +68,17 @@ extern "C" void set_debug_traps();
 extern "C" void breakpoint();
 #endif
 
-/*void _test_task()
-{
-unsigned char* c = (unsigned char*) 0x80000000;
-unsigned char* cl = (unsigned char*) 0x80000001;
-int n = 0;
-if(*c == '-')
- asm("int $0x31"::"a"(2),"b"(2));
-for(;;)
- {
- printf("%z%c", *cl, *c);
- n++;
- if(n == 100)
-  asm("int $0x31"::"a"(1),"b"(2));
- int i;
- for(i = 0; i < 1000000; i++);
- }
-}*/
-
-/*void test_tasks()
-{
-VirtualMemoryManager* vmm1 = new VirtualMemoryManager;
-unsigned char* c1 = (unsigned char*) vmm1->physical(vmm1->alloc(1));
-*c1 = '+';
-*(c1+1) = LIGHTRED;
-VirtualMemoryManager* vmm2 = new VirtualMemoryManager;
-unsigned char* c2 = (unsigned char*) vmm2->physical(vmm2->alloc(1));
-*c2 = '-';
-*(c2+1) = LIGHTBLUE;
-VirtualMemoryManager* vmm3 = new VirtualMemoryManager;
-unsigned char* c3 = (unsigned char*) vmm3->physical(vmm3->alloc(1));
-*c3 = '*';
-*(c3+1) = LIGHTGREEN;
-
-hal->taskman->create_task(hal->sys_code, hal->sys_data, 1, (unsigned int) &_test_task, 1, vmm1); //2
-hal->taskman->create_task(hal->sys_code, hal->sys_data, 1, (unsigned int) &_test_task, 2, vmm2); //3
-hal->taskman->create_task(hal->sys_code, hal->sys_data, 1, (unsigned int) &_test_task, 3, vmm3); //4
-}
-*/
-
 extern "C" void entry(unsigned long magic, multiboot_info_t* multiboot_info)
 {
-int num;
+unsigned int mm_position = 0x00400000;
+if(multiboot_info->mods_count != 0)
+ {
+ module_t* mod;
+ for(mod = (module_t*)multiboot_info->mods_addr; mod->mod_start != NULL; mod++)
+  mm_position = mod->mod_end + 0x1000;
+ }
 
-MemoryManager* mm = new (MM_POSITION) MemoryManager(0x00401000, multiboot_info->mem_upper * 1024);
+MemoryManager* mm = new (mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024);
 
 hal = new (mm->alloc(1)) HAL(multiboot_info);
 hal->cli();
@@ -128,6 +93,9 @@ hal->terminal->clear();
 if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
  hal->panic("Invalid magic number! I can be booted only with multiboot bootloader, e.g. GRUB!");
 
+unsigned int memory_before = mm->free_memory();
+unsigned int memory_after;
+
 printf("%zStory OS%z version %z%s (build %i)%z, Copyright (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
@@ -135,13 +103,15 @@ printf("%zStory OS%z comes with ABSOLUTELY NO WARRANTY; for details type `cat wa
 printf("This is free software, and you are welcome to redistribute it\n");
 printf("under certain conditions; type `cat copying' for details.\n\n");
 
-printf("System memory amount is %z%d KB%z.\n\n", WHITE, hal->mm->free_memory() / 0x400, LIGHTGRAY);
+//printf("System memory amount is %z%d KB%z.\n\n", WHITE, hal->mm->free_memory() / 0x400, LIGHTGRAY);
 
 printf("%zInitializing HAL...%z ", GREEN, LIGHTGRAY);
 
 //printf("GDT... ");
 hal->gdt = new GDT;
 hal->gdt->add_descriptor(new NullDescriptor());
+
+int num;
 
 //0x00000000=>0xFFFFFFFF readable 32 bit code segment with dpl=0
 num = hal->gdt->add_descriptor(new SegmentDescriptor(0, 0xFFFFFFFF, true, true, 0, true));
@@ -192,7 +162,6 @@ hal->clock = new Clock();
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 //printf("Paging... ");
-hal->pagedir = (PageDirectory*) 0x00400000;
 hal->paging = new Paging();
 //printf("enabling... ");
 hal->paging->enable();
@@ -211,26 +180,8 @@ printf("Issuing a breakpoint...\n");
 breakpoint();
 #endif
 
-//printf("Testing VMM... ");
-
- {
- VirtualMemoryManager* vmm = new VirtualMemoryManager();
- vmm->load();
- //printf("alloc... ");
- unsigned int* test1 = (unsigned int*) vmm->alloc(1);
- unsigned int* test2 = (unsigned int*) vmm->physical(test1);
- *test2 = 0xDEADBEEF;
- if(*test1 != 0xDEADBEEF)
-  hal->panic("VMM self-testing error!");
- //printf("free... ");
- hal->paging->load_cr3(hal->pagedir);
- //printf("delete... ");
- delete vmm;
- }
-
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
+memory_after = mm->free_memory();
+printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
 
 core = new Core(multiboot_info);
 

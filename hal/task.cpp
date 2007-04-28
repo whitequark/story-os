@@ -133,7 +133,7 @@ for(r = current->next; r != current; r = r->next)
  if(r->reason == rsTaskDie && r->wait_object == index)
   {
   r->reason = rsNone;
-// FIXME  r->regs.eax = return_code;
+  r->tss->eax = return_code;
   }
 
 t->reason = rsDead;
@@ -232,8 +232,6 @@ task->tss->fs = 0;
 task->tss->gs = 0;
 task->tss->ldt = 0;
 task->tss->iomap = 0;
-
-task->vmm->map(0xB8000, 0xc0000000, 1, PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT); //FIXME
 
 task->message = NULL; //FIXME delete when killing
 
