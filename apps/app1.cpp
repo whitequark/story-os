@@ -18,19 +18,10 @@
 #include <system.h>
 #include <string.h>
 #include <ipc.h>
+#include <assert.h>
 #include <stdio.h>
 
 int main()
 {
-MessageType type = mtUnknown;
-char* data = "hello!";
-unsigned int task = 4;
-printf("app1: sending type=%i data='%s' length=%i to task %i... ", type, data, strlen(data), task);
-bool success = Message(type, task, data, strlen(data)).send();
-if(success == 0)
- printf("success!\n");
-else
- printf("error!\n");
-*((int*)0) = 0;
-printf("app1: exit\n");
+Interface("keyboard").require();
 }

@@ -19,13 +19,15 @@
 #include <stdio.h>
 
 int main();
+void init_mallocator();
 
 extern "C" void _start()
 {
+//init_mallocator(); FIXME
 die(main());
 }
 
-void* page_alloc(int count) //FIXME c++ maybe?
+void* page_alloc(int count)
 {
 void* ret;
 asm("int $0x31":"=a"(ret):"a"(7),"b"(count));
@@ -40,19 +42,16 @@ asm("int $0x31"::"a"(0),"b"(return_code));
 void wait_die(unsigned int tid)
 {
 asm("int $0x31"::"a"(2),"b"(tid));
-asm("int $0x30");
 }
 
 void delay(unsigned int millis)
 {
 asm("int $0x31"::"a"(4),"b"(millis));
-asm("int $0x30");
 }
 
 void wait_irq(unsigned int irq)
 {
 asm("int $0x31"::"a"(3),"b"(irq));
-asm("int $0x30");
 }
 
 void putchar(char c) //FIXME !

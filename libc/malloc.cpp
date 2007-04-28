@@ -33,7 +33,6 @@ typedef struct mb_st
  struct mb_st *link;
  } mb_t;
 
-static int avail;
 static mb_t avlmb;
 
 void init_mallocator()

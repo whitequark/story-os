@@ -3,4 +3,3 @@ title Story OS
 	kernel /kernel
 	module /keyboard
 	module /app1
-	module /app2

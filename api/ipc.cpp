@@ -16,7 +16,11 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <ipc.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <system.h>
 #include <assert.h>
+#include <colors.h>
 
 Message::Message(MessageType type, unsigned int receiver, void* data, unsigned int length)
 {
@@ -39,4 +43,80 @@ bool MessageQuery::pending()
 bool ret;
 asm("int $0x31":"=a"(ret):"a"(50));
 return ret;
+}
+
+void MessageQuery::clear()
+{
+asm("int $0x31"::"a"(52));
+}
+
+void MessageQuery::remove()
+{
+asm("int $0x31"::"a"(53));
+}
+
+MessageType MessageQuery::type()
+{
+MessageType ret;
+asm("int $0x31":"=a"(ret):"a"(55));
+return ret;
+}
+
+unsigned int MessageQuery::length()
+{
+unsigned int ret;
+asm("int $0x31":"=a"(ret):"a"(54));
+return ret;
+}
+
+void MessageQuery::data(char* data)
+{
+asm("int $0x31"::"a"(56),"b"(data));
+}
+
+void MessageQuery::wait()
+{
+asm("int $0x31"::"a"(58));
+}
+
+char* MessageQuery::alloc_data()
+{
+char* ret = (char*) malloc(length());
+data(ret);
+return ret;
+}
+
+unsigned int MessageQuery::sender()
+{
+unsigned int ret;
+asm("int $0x31":"=a"(ret):"a"(57));
+return ret;
+}
+
+Interface::Interface(char* name)
+{
+this->name = name;
+}
+
+bool Interface::add()
+{
+unsigned int ret;
+asm("int $0x31":"=a"(ret):"a"(100),"b"(name));
+return ret;
+}
+
+bool Interface::present()
+{
+unsigned int ret;
+asm("int $0x31":"=a"(ret):"a"(101),"b"(name));
+return ret;
+}
+
+void Interface::require()
+{
+if(!present())
+ {
+ printf("%zRequired interface '%s' not present. Terminating...%z\n", LIGHTRED, name, LIGHTGRAY);
+ die(0xF000);
+ }
 }

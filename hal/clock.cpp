@@ -22,10 +22,10 @@
 Clock::Clock()
 {
 ticks = 0;
-unsigned int hz = 1000;
+hz = 100;
 hal->outb(0x43, 0x36);
-hal->outb(0x40, (1193180 / hz) & 0xff);
-hal->outb(0x40, ((1193180 / hz) >> 8) & 0xff); 
+hal->outb(0x40, (1193180 / (unsigned int)hz) & 0xff);
+hal->outb(0x40, ((1193180 / (unsigned int)hz) >> 8) & 0xff); 
 }
 
 void Clock::tick()
@@ -35,5 +35,5 @@ ticks++;
 
 unsigned int Clock::ms_to_ticks(unsigned int ms)
 {
-return ms;
+return ms * hz / 1000;
 }

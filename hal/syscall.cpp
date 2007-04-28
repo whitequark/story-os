@@ -61,6 +61,7 @@ unsigned int syscall_delay(Registers r)
 {
 hal->taskman->current->reason = rsDelay;
 hal->taskman->current->wait_object = hal->clock->ms_to_ticks(r.ebx);
+asm("ljmp $0x30, $0");
 return 0;
 }
 
@@ -76,7 +77,7 @@ textcolor(r.ebx);
 return 0;
 }
 
-unsigned int syscall_palloc(Registers r)
+unsigned int syscall_morecore(Registers r)
 {
 return (unsigned int)hal->taskman->current->vmm->alloc(r.ebx);
 }
@@ -94,6 +95,9 @@ return hal->syscalls->invoke(r.eax, r);
 
 extern "C" void syscall();
 asm(
+	"_syscall_return_value:\n"
+	".long 0\n"
+
 	"syscall:\n"
 	"push %ebp\n"
 	"pushal\n"
@@ -115,6 +119,7 @@ asm(
 	"mov %ax,%es\n"
 
 	"call syscall_handler\n"
+	"mov %eax, _syscall_return_value\n"
 
 	"add $24, %esp\n"
 
@@ -123,6 +128,8 @@ asm(
 
 	"popal\n"
 	"pop %ebp\n"
+	
+	"mov _syscall_return_value, %eax\n"
 
 	"iret\n"
 );
@@ -155,5 +162,5 @@ add(3, &syscall_wait_irq);
 add(4, &syscall_delay);
 add(5, &syscall_putchar); //FIXME !
 add(6, &syscall_textcolor); //FIXME !
-add(7, &syscall_palloc);
+add(7, &syscall_morecore);
 }

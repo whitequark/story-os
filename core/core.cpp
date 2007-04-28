@@ -32,6 +32,10 @@ printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 messenger = new Messenger;
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
+//printf("Interfaces... ");
+interfaces = new InterfaceManager;
+//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+
 printf("%zCOMPLETE%z\n\n", GREEN, LIGHTGRAY);
 
 bool errors_found = false;
@@ -54,7 +58,7 @@ if(mbi->mods_count > 0)
    continue;
    }
   module->pl = 1;
-  module->priority = 30;
+  module->priority = 10;
   }
  }
 else

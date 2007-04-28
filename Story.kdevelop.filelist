@@ -83,3 +83,5 @@ api/ipc.cpp
 api/ipc.cpp
 api/include/ipc.h
 include/version.h
+core/interface.cpp
+core/include/interface.h

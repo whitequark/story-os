@@ -7,7 +7,7 @@
 #include <messages.h>
 
 #define PL0_STACK_SIZE 2
-#define PL3_STACK_SIZE 8
+#define PL3_STACK_SIZE 16
 
 typedef unsigned int u32;
 typedef unsigned short u16;
@@ -47,7 +47,7 @@ unsigned int   esi;
 unsigned int   edi;
 } __attribute__((__packed__)) Registers;
 
-typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay } WaitingReason;
+typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage } WaitingReason;
 
 /*
 PL's:

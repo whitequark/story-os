@@ -27,15 +27,6 @@ void TaskManager::scheduler()
 while(1)
  {
  Task* t;
- int n;
- for(n = 0, t = hal->taskman->current; t != hal->taskman->current || n == 0; n++, t = t->next)
-  if(t->reason == rsDelay)
-   {
-   t->wait_object--;
-   if(t->wait_object <= 0)
-    t->reason = rsNone;
-   }
-
  if(hal->taskman->ticks_remaining <= 0)
   {
   hal->taskman->ticks_remaining = hal->taskman->current->priority;
@@ -61,14 +52,26 @@ hal->taskman->scheduler();
 
 extern "C" void timer_handler()
 {
-static int n;
+static int d;
 char c[4] = { '\\', '|', '/', '-' };
 asm("movb %0, 0xB8000+80*2-1"::"a"(WHITE));
-asm("movb %0, 0xB8000+80*2-2"::"a"(c[(n++)/100]));
-if(n == 100*4+1) n = 0;
+asm("movb %0, 0xB8000+80*2-2"::"a"(c[(d++)/100]));
+if(d == 100*4+1) d = 0;
 
 hal->clock->tick();
+
+int n;
+Task* t;
+for(n = 0, t = hal->taskman->current; t != hal->taskman->current || n == 0; n++, t = t->next)
+ if(t->reason == rsDelay)
+  {
+  t->wait_object--;
+  if(t->wait_object <= 0)
+   t->reason = rsNone;
+  }
+
 hal->outb(0x20, 0x20);
+
 if(!hal->taskman->scheduler_running)
  {
  hal->taskman->scheduler_running = true;
@@ -140,7 +143,7 @@ hal->paging->load_cr3(hal->pagedir);
 delete t->vmm;
 
 if(current->index == index)
- asm("int $0x20"); //switch to some other task if this was suicide
+ asm("ljmp $0x30, $0"); //switch to some other task if this was suicide
 
 return true;
 }

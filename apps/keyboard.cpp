@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <system.h>
 #include <assert.h>
+#include <ipc.h>
 
 void putchar(char c);
 
@@ -127,6 +128,7 @@ outb(0x21, 0);
 outb(0x60, 0xF4);
 while(inb(0x64) & 1)
  inb(0x60);
+//assert(Interface("keyboard").add());
 printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 bool leftctrl = 0, rightctrl = 0, leftshift = 0, rightshift = 0, leftalt = 0, rightalt = 0, escaped = 0;

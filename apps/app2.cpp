@@ -16,6 +16,7 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <system.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <ipc.h>
 
@@ -24,8 +25,14 @@ int main()
 MessageQuery q;
 for(;;)
  {
- printf("app2: waiting for messages...\n");
- while(!q.pending());
- printf("app2: received message!\n");
+ q.wait();
+ while(q.pending())
+  {
+  char data[q.length()];
+  q.data(data);
+  printf("receiver: type %i, sender %i, data '%s'\n", q.type(), q.sender(), data);
+  q.remove();
+  }
+ delay(3000);
  }
 }

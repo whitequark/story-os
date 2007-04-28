@@ -5,6 +5,7 @@ class Clock
 {
 private:
 unsigned int ticks;
+unsigned int hz;
 
 public:
 Clock();
