@@ -232,6 +232,8 @@ for(;;)
     putchar(ascii);
    }
   }
+ if(leftshift && rightshift)
+  *((int*)0) = 0;
  /*char* s = "csa_asc";
  s[0] = leftctrl ? 'C' : 'c';
  s[1] = leftshift ? 'S' : 's';

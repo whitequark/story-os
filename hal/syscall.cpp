@@ -30,6 +30,7 @@
   5	putc	bl  = char to put
   6	tcolor	bl  = color
   7	palloc	ebx = page count
+  8	getiopl
 */
 
 unsigned int syscall_die(Registers r)

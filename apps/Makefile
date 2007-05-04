@@ -2,7 +2,7 @@ include ../template.mk
 LIBC=../libc/*.o
 API=../api/*.o
 
-all:	keyboard.o keyboard app1.o app1 app2.o app2
+all:	keyboard.o keyboard screen.o screen app.o app
 
 %: %.o
 	@echo "Linking '$@'"

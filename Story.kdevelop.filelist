@@ -85,3 +85,10 @@ api/include/ipc.h
 include/version.h
 core/interface.cpp
 core/include/interface.h
+hal/terminal_driver.cpp
+hal/task.cpp
+hal/handlers.cpp
+hal/boot.S
+hal/include/terminal_driver.h
+core/service.cpp
+core/include/service.h

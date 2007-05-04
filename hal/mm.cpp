@@ -69,6 +69,7 @@ return NULL;
 
 void MemoryManager::free(void* address)
 {
+return;
 hal->panic("FREE called!");
 if(address == NULL)
  return;

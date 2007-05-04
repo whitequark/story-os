@@ -146,7 +146,6 @@ hal->idt->register_exceptions();
 //printf("PIC... ");
 hal->pic = new PIC;
 hal->pic->remap(0x20, 0x28);
-hal->pic->mask(0);
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 //printf("IRQ handlers... ");
@@ -157,10 +156,6 @@ hal->idt->register_irqs();
 hal->syscalls = new SyscallManager();
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
-//printf("Clock... ");
-hal->clock = new Clock();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
 //printf("Paging... ");
 hal->paging = new Paging();
 //printf("enabling... ");
@@ -169,6 +164,10 @@ hal->paging->enable();
 
 //printf("Task manager... ");
 hal->taskman = new TaskManager();
+//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+
+//printf("Clock... ");
+hal->clock = new Clock();
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 #ifdef _ENABLE_GDB_STUB_

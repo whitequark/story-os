@@ -7,6 +7,7 @@
 #include <story.h>
 #include <messages.h>
 #include <interface.h>
+#include <service.h>
 
 class Core
 {
@@ -17,6 +18,7 @@ Task* load_elf(unsigned int start, unsigned int size);
 public:
 Messenger* messenger;
 InterfaceManager* interfaces;
+ServiceManager* services;
 Task* load_executable(unsigned int start, unsigned int size, char* command_line);
 Core(multiboot_info_t*);
 };

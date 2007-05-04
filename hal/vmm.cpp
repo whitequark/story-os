@@ -70,6 +70,7 @@ return NULL;
 
 void VirtualMemoryManager::free(void* address)
 {
+return;
 hal->panic("VFREE called!");
 if(address == NULL)
  return;
@@ -99,6 +100,7 @@ hal->paging->load_cr3(directory);
 
 VirtualMemoryManager::~VirtualMemoryManager()
 {
+hal->paging->load_cr3(hal->pagedir);
 int i;
 for(i = 0x40000; i < 0x100000; i++)
  if(get_bit(i))

@@ -70,3 +70,24 @@ else
  return false;
  }
 }
+
+void InterfaceManager::process_kill(Task* task)
+{
+Interface* intf;
+if(interface->task == task->index)
+ {
+ Interface* n = interface->next;
+ free(interface->name);
+ delete interface;
+ interface = n;
+ }
+if(interface->next != NULL)
+ for(intf = interface; intf; intf = intf->next)
+  if(intf->next->task == task->index)
+   {
+   Interface* nn = intf->next->next;
+   free(intf->next->name);
+   delete intf->next;
+   intf->next = nn;
+   }
+}

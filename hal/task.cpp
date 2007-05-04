@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <colors.h>
 #include <stdlib.h>
+#include <core.h>
 
 void TaskManager::scheduler()
 {
@@ -53,10 +54,11 @@ hal->taskman->scheduler();
 extern "C" void timer_handler()
 {
 static int d;
+const int p = 10;
 char c[4] = { '\\', '|', '/', '-' };
 asm("movb %0, 0xB8000+80*2-1"::"a"(WHITE));
-asm("movb %0, 0xB8000+80*2-2"::"a"(c[(d++)/100]));
-if(d == 100*4+1) d = 0;
+asm("movb %0, 0xB8000+80*2-2"::"a"(c[(d++)/p]));
+if(d == p*4) d = 0;
 
 hal->clock->tick();
 
@@ -106,6 +108,8 @@ asm(
 
 bool TaskManager::kill(unsigned int index, unsigned int return_code)
 {
+hal->cli();
+
 Task *t, *r;
 if(index == current->index)
  t = current;
@@ -113,20 +117,14 @@ else
  {
  for(t = current->next; t->index != index && t != current; t = t->next); //find task with our index
  if(t == current)
-  {
-  #ifdef _DEBUGGING_TASKMAN_
-  printf("TaskManager::kill : task is not present!\n");
-  #endif
   return false;
-  }
  }
 if(current->pl > t->pl) 
- {
- #ifdef _DEBUGGING_TASKMAN_
- printf("TaskManager::kill : attempting to kill task with higher PL!\n");
- #endif
  return false;
- }
+
+if(return_code != 0)
+ core->services->process_kill(t);
+//core->interfaces->process_kill(t);
 
 //find and continue all waiting tasks
 for(r = current->next; r != current; r = r->next)
@@ -138,10 +136,9 @@ for(r = current->next; r != current; r = r->next)
 
 t->reason = rsDead;
 
-hal->paging->load_cr3(hal->pagedir);
-
 delete t->vmm;
 
+hal->sti();
 if(current->index == index)
  asm("ljmp $0x30, $0"); //switch to some other task if this was suicide
 
@@ -206,7 +203,7 @@ task->tss->cr3 = task->vmm->get_directory();
 task->tss->eip = entry;
 task->tss->trace = 0;
 
-task->tss->eflags = 0x3202; //FIXME IOPL=3
+task->tss->eflags = 0x202;
 task->tss->eax = 0;
 task->tss->ebx = 0;
 task->tss->ecx = 0;

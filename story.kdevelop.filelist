@@ -90,3 +90,7 @@ hal/task.cpp
 hal/handlers.cpp
 hal/boot.S
 hal/include/terminal_driver.h
+core/service.cpp
+core/include/service.h
+apps/app.cpp
+apps/screen.cpp

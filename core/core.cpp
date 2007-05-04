@@ -39,6 +39,10 @@ messenger = new Messenger;
 interfaces = new InterfaceManager;
 //printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
+//printf("Services... ");
+services = new ServiceManager;
+//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+
 memory_after = hal->mm->free_memory();
 printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
 memory_before = hal->mm->free_memory();
@@ -53,17 +57,16 @@ if(mbi->mods_count > 0)
  for(mod = (module_t*)mbi->mods_addr; mod->mod_start != NULL; mod++)
   {
   printf("Loading `%s'... ", mod->string);
-  Task* module;
-  if(module = load_executable(mod->mod_start, mod->mod_end - mod->mod_start, (char*) mod->string))
-   printf("%zok%z (task %i)\n", LIGHTGREEN, LIGHTGRAY, module->index);
+  unsigned int index = services->load(mod->mod_start, mod->mod_end - mod->mod_start, (char*) mod->string);
+  Task* t = services->start(index);
+  if(t)
+   printf("%zok%z (task %i)\n", LIGHTGREEN, LIGHTGRAY, t->index);
   else 
    {
    printf("%zFAILED%z\n", LIGHTRED, LIGHTGRAY);
    errors_found = true;
    continue;
    }
-  module->pl = 1;
-  module->priority = 10;
   }
  }
 else

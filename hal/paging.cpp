@@ -34,7 +34,7 @@ for(i = 0; i < 0x100; i++)
  PageTable* table = (PageTable*) (page_tables + i * 0x1000);
  hal->pagedir->table[i] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE;
  
- for(j = 0; j < 0x400; j++)
+ for(j = (i == 0 ? 1 : 0); j < 0x400; j++)
   {
   unsigned int address = (i * 0x400 + j) << 12;
   table->page[j] = address | PAGE_PRESENT | PAGE_WRITABLE;

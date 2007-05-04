@@ -60,7 +60,7 @@ return ret;
 
 char *strcat(char *dest, const char *src)
 {
-return strncat (dest, src, 0x10000);
+return strncat (dest, src, 0x10000); //FIXME
 }
 
 int strcmp(const char *s1, const char *s2)
@@ -122,6 +122,7 @@ else
 char* strdup(char* src)
 {
 char* r = new char[strlen(src)+1];
+r[strlen(src)] = 0;
 strcpy(r, src);
 return r;
 }
