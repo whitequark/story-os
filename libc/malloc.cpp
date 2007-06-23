@@ -21,9 +21,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <hal.h>
-#include <system.h>
 
 void* grow(int npages);
+void* morecore(unsigned int n);
 
 #define LAST_LINK -1
 
@@ -33,15 +33,15 @@ typedef struct mb_st
  struct mb_st *link;
  } mb_t;
 
-static mb_t avlmb;
+mb_t avlmb;
 
 void init_mallocator()
 {
 mb_t *cmb;
-  
+
 avlmb.size = 0;
-avlmb.link = (mb_t*) page_alloc(1);
-  
+avlmb.link = (mb_t*) morecore(1);
+
 cmb = avlmb.link;
 cmb->size = PAGE_SIZE;
 cmb->link = (mb_t*)LAST_LINK;
@@ -104,7 +104,7 @@ return s;
 void* grow(int npages)
 {
 mb_t *mb;
-mb = (mb_t*) page_alloc(npages);
+mb = (mb_t*) morecore(npages);
 mb->size = PAGE_SIZE * npages;
 mb->link = (mb_t*) LAST_LINK;
 return mb;

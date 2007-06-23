@@ -23,5 +23,25 @@
 
 int main()
 {
-Interface("keyboard").require();
+/*Interface("keyboard").wait("get");
+char c = Interface("keyboard").call("get", "");
+printf("got %c\n", c);*/
+/*printf("app: send\n");
+Message(mtUnknown, 3, (void*) "test", 5).send();
+printf("app: sent\n");
+printf("app: %s reply\n", Reply().check() ? "have" : "have not");
+char reply[Reply().length()];
+Reply().data(reply);
+printf("app: got reply '%s'\n", reply);
+Reply().remove();
+printf("app: removed reply\n");
+printf("app: %s reply\n", Reply().check() ? "have" : "have not");*/
+CallPacker cp("getk", "dddddb");
+cp.dump();
+
+Message(mtFunction, 2, cp.data(), cp.size()).send();
+
+char reply[Reply().length()];
+Reply().data(reply);
+printf("reply: %c\n", reply[0]);
 }

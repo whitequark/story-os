@@ -20,19 +20,18 @@
 #include <string.h>
 #include <stdio.h>
 
-//high bit
-#define PAGE_ALLOCATED	0x80000000
-#define PAGE_MAPPED	0x40000000
-#define PAGE_FREE	0x00000000
+bool ok;
 
 VirtualMemoryManager::VirtualMemoryManager()
 {
 int i, j;
 directory = (PageDirectory*) hal->mm->alloc(1);
 memset(directory, 0, 0x1000); //this will clear 'present' bit in whole directory
-memcpy(directory, hal->pagedir, 512);
+memcpy(directory, hal->pagedir, 256);
+ok = false;
 for(i = 0; i < 0x40000; i++)
  set_bit(i);
+ok = true;
 }
 
 void* VirtualMemoryManager::alloc(unsigned int count)
@@ -55,9 +54,10 @@ for(i = 0x40000; i < 0x100000; i++)
   printf("vmm: found free block at %X length %i\n", i,  count);
   #endif
   unsigned int phys = (unsigned int) hal->mm->alloc(count);
+  if(!phys)
+   return NULL;
   set_bit(i);
   hal->paging->set_pte(directory, i, phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
-  printf("/valloc:%i/", count);
   for(j = i+1; j < i+count; j++)
    {
    set_bit(j);
@@ -74,7 +74,7 @@ return;
 hal->panic("VFREE called!");
 if(address == NULL)
  return;
-unsigned int page = ((unsigned int) address) >> 12;
+/*unsigned int page = ((unsigned int) address) >> 12;
 if(((unsigned int) address) & 0xFFF)
  hal->panic("Attempt to free non-aligned address %X\n", address);
 if(!(page_bitmap[page] & PAGE_ALLOCATED))
@@ -90,7 +90,7 @@ for(i = page; ; i++)
   page_bitmap[i] = PAGE_FREE;
   }
  else
-  break;
+  break;*/
 }
 
 void VirtualMemoryManager::load()
@@ -120,7 +120,7 @@ unsigned int i;
 for(i = 0; i < count; i++)
  {
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
- set_bit(virt >> 12);
+ set_bit((virt >> 12) + i);
  #ifdef _DEBUGGING_VMM_
  printf("vmm: mapping 0x%X to 0x%X (flags 0x%x)\n", ((virt >> 12) + i) << 12, (phys + (i << 12)), attr);
  #endif
@@ -135,6 +135,7 @@ return (unsigned int)directory;
 inline void VirtualMemoryManager::set_bit(unsigned int page)
 {
 page_bitmap[page / 32] |= (1 << page % 32);
+//if(ok) printf("/s:%X/", page);
 }
 
 inline bool VirtualMemoryManager::get_bit(unsigned int page)

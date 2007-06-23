@@ -1,6 +1,6 @@
 OBJDIRS=hal libc core
 FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)
-VERSION=0.45
+VERSION=0.47
 
 all:
 	@echo "WARNING: If it does not compile, check path in template.mk!"

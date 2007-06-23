@@ -20,6 +20,8 @@
 #include <story.h>
 #include <stdio.h>
 #include <string.h>
+#include <core.h>
+#include <assert.h>
 
 unsigned int syscall_send(Registers r)
 {
@@ -48,30 +50,15 @@ else
 
 if(receiver->reason == rsMessage)
  receiver->reason = rsNone;
+
+hal->taskman->current->reason = rsReply;
+asm("ljmp $0x30, $0");
+
 return 0;
 }
 unsigned int syscall_check(Registers r)
 {
 return hal->taskman->current->message != NULL;
-}
-unsigned int syscall_clear(Registers r)
-{
-Message* msg;
-for(msg = hal->taskman->current->message; msg != NULL; msg = msg->next)
- {
- free(msg->data);
- delete msg;
- }
-hal->taskman->current->message = NULL;
-return 0;
-}
-unsigned int syscall_remove(Registers r)
-{
-Message* msg = hal->taskman->current->message;
-hal->taskman->current->message = msg->next;
-free(msg->data);
-delete msg;
-return 0;
 }
 unsigned int syscall_length(Registers r)
 {
@@ -97,16 +84,74 @@ if(hal->taskman->current->message == NULL)
  asm("ljmp $0x30, $0"); //FIXME
  }
 }
+unsigned int syscall_reply(Registers r)
+{
+Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
+if(!receiver)
+ return 1;
+Message* msg = new Message;
+msg->sender = hal->taskman->current->index;
+msg->type = hal->taskman->current->message->type;
+msg->length = r.ecx;
+msg->data = malloc(msg->length);
+memcpy(msg->data, (void*) r.edx, msg->length); //TODO make straight transfer
+
+if(receiver->reply != NULL)
+ delete receiver->reply;
+receiver->reply = msg;
+assert(receiver->reason == rsReply);
+receiver->reason = rsNone;
+
+msg = hal->taskman->current->message;
+hal->taskman->current->message = msg->next;
+free(msg->data);
+delete msg;
+
+return 0;
+}
+unsigned int syscall_reply_check(Registers r)
+{
+return hal->taskman->current->reply != NULL;
+}
+unsigned int syscall_reply_length(Registers r)
+{
+return hal->taskman->current->reply->length;
+}
+unsigned int syscall_reply_data(Registers r)
+{
+memcpy((void*) r.ebx, hal->taskman->current->reply->data, hal->taskman->current->reply->length);
+}
+unsigned int syscall_reply_remove(Registers r)
+{
+free(hal->taskman->current->reply->data);
+delete hal->taskman->current->reply;
+hal->taskman->current->reply = NULL;
+return 0;
+}
 
 Messenger::Messenger()
 {
 hal->syscalls->add(50, &syscall_check);
 hal->syscalls->add(51, &syscall_send);
-hal->syscalls->add(52, &syscall_clear);
-hal->syscalls->add(53, &syscall_remove);
 hal->syscalls->add(54, &syscall_length);
 hal->syscalls->add(55, &syscall_type);
 hal->syscalls->add(56, &syscall_data);
 hal->syscalls->add(57, &syscall_sender);
 hal->syscalls->add(58, &syscall_wait);
+hal->syscalls->add(59, &syscall_reply);
+hal->syscalls->add(60, &syscall_reply_check);
+hal->syscalls->add(61, &syscall_reply_length);
+hal->syscalls->add(62, &syscall_reply_data);
+hal->syscalls->add(63, &syscall_reply_remove);
+}
+
+void Messenger::clear()
+{
+Message* msg;
+for(msg = hal->taskman->current->message; msg != NULL; msg = msg->next)
+ {
+ free(msg->data);
+ delete msg;
+ }
+hal->taskman->current->message = NULL;
 }

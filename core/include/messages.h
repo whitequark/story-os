@@ -16,6 +16,7 @@ class Messenger
 {
 public:
 Messenger();
+void clear();
 };
 
 #endif

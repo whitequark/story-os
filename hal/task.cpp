@@ -124,7 +124,8 @@ if(current->pl > t->pl)
 
 if(return_code != 0)
  core->services->process_kill(t);
-//core->interfaces->process_kill(t);
+core->interfaces->process_kill(t);
+core->messenger->clear();
 
 //find and continue all waiting tasks
 for(r = current->next; r != current; r = r->next)

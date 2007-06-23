@@ -47,7 +47,7 @@ unsigned int   esi;
 unsigned int   edi;
 } __attribute__((__packed__)) Registers;
 
-typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage } WaitingReason;
+typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage, rsReply } WaitingReason;
 
 /*
 PL's:
@@ -73,6 +73,7 @@ unsigned int priority;
 VirtualMemoryManager* vmm;
 
 Message* message;
+Message* reply;
 
 WaitingReason reason;
 unsigned int wait_object;

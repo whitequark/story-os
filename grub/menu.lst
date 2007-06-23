@@ -2,5 +2,5 @@ title Story OS
 	root (cd)
 	kernel /kernel
 	module /keyboard
-	module /screen
+##	module /screen
 	module /app

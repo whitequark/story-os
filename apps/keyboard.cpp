@@ -119,8 +119,6 @@ asm("inb %w1, %b0": "=a"(value): "d"(port));
 return value;
 }
 
-void textcolor(char c);
-
 int main()
 {
 printf("Initializing keyboard... ");
@@ -128,14 +126,23 @@ outb(0x21, 0);
 outb(0x60, 0xF4);
 while(inb(0x64) & 1)
  inb(0x60);
-assert(Interface("keyboard").add());
+assert(Interface("keyboard").add() == 0);
+assert(Interface("keyboard").add("get", "", "b") == 0);
 printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+
+MessageQuery q;
 
 bool leftctrl = 0, rightctrl = 0, leftshift = 0, rightshift = 0, leftalt = 0, rightalt = 0, escaped = 0;
 
 for(;;)
  {
  unsigned char scancode;
+ if(q.pending())
+  {
+  Message((void*) "a", 1).reply();
+  printf("replying");
+  }
+  
  if(inb(0x64) & 1)
   {
   scancode = inb(0x60);

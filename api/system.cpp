@@ -23,11 +23,11 @@ void init_mallocator();
 
 extern "C" void _start()
 {
-//init_mallocator(); FIXME
+//init_mallocator();
 die(main());
 }
 
-void* page_alloc(int count)
+void* morecore(unsigned int count)
 {
 void* ret;
 asm("int $0x31":"=a"(ret):"a"(7),"b"(count));

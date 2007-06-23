@@ -68,7 +68,7 @@ void* operator new[](unsigned int, void* p)
 return operator new[](0, (unsigned int)p);
 }
 
-void* page_alloc(int count)
+void* morecore(unsigned int count)
 {
 return hal->mm->alloc(count);
 }

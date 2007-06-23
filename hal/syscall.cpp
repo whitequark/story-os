@@ -80,7 +80,8 @@ return 0;
 
 unsigned int syscall_morecore(Registers r)
 {
-return (unsigned int)hal->taskman->current->vmm->alloc(r.ebx);
+unsigned int addr = (unsigned int)hal->taskman->current->vmm->alloc(r.ebx);
+return addr;
 }
 
 /*

@@ -15,7 +15,18 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#include <ipc.h>
+#include <assert.h>
+#include <stdio.h>
+
 int main()
 {
-
+MessageQuery q;
+printf("screen: wait\n");
+q.wait();
+char data[q.length()];
+q.data(data);
+printf("screen: got '%s'\n", data);
+Message((void*) "test_reply", 11).reply();
+printf("screen: replyed\n");
 }
