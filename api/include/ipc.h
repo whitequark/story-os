@@ -23,7 +23,7 @@ unsigned int receiver, length;
 void* data;
 
 public:
-Message(MessageType type, unsigned int receiver, void* data, unsigned int length);
+Message(unsigned int type, unsigned int receiver, void* data, unsigned int length);
 Message(void* data, unsigned int length);
 bool send();
 bool reply();

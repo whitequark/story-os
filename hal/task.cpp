@@ -125,7 +125,7 @@ if(current->pl > t->pl)
 if(return_code != 0)
  core->services->process_kill(t);
 core->interfaces->process_kill(t);
-//core->messenger->clear(); FIXME
+//core->messenger->clear();
 
 //find and continue all waiting tasks
 for(r = current->next; r != current; r = r->next)
@@ -231,7 +231,7 @@ task->tss->gs = 0;
 task->tss->ldt = 0;
 task->tss->iomap = 0;
 
-task->message = NULL; //FIXME delete when killing
+task->message = NULL;
 
 task->descriptor = new TSSDescriptor((unsigned int)task->tss);
 
@@ -319,7 +319,7 @@ asm("ltr %0"::"a"((unsigned short)(descriptor*8)));
 void TaskManager::run_task(Task* task)
 {
 hal->gdt->modify_descriptor(task->descriptor, app_tss);
-asm("ljmp $0x28, $0"); //FIXME add variable
+asm("ljmp $0x28, $0");
 }
 
 Task* TaskManager::task(unsigned int index)

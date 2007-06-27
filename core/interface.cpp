@@ -64,7 +64,6 @@ if(!get(name))
  intf->name = strdup(name);
  intf->task = hal->taskman->current->index;
  intf->next = interface;
- intf->function = NULL;
  if(interface)
   interface->prev = intf;
  intf->prev = NULL;

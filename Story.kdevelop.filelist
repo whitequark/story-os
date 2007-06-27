@@ -69,3 +69,7 @@ core
 core/include
 core/include/elf.h
 core/include/stdint.h
+services
+services/include
+services/include/terminal.h
+services/api_terminal.cpp

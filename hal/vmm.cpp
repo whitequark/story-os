@@ -110,7 +110,6 @@ for(i = 0x40000; i < 0x100000; i++)
   #endif
   free((void*) (i << 12));
   }
-//TODO free tables
 hal->mm->free(directory);
 }
 

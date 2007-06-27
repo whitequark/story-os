@@ -7,7 +7,6 @@ typedef struct SInterface
 {
 char* name;
 unsigned int task;
-Function* function;
 SInterface* next;
 SInterface* prev;
 } Interface;

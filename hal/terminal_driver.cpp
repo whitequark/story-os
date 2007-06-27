@@ -19,8 +19,6 @@
 #include <hal.h>
 #include <string.h>
 
-//FIXME: remove it
-
 KernelTerminalDriver::KernelTerminalDriver() : lfb((short unsigned*)hal->lfb), cursorx(0), cursory(0)
 {
 update_cursor();

@@ -60,7 +60,7 @@ return ret;
 
 char *strcat(char *dest, const char *src)
 {
-return strncat (dest, src, 0x10000); //FIXME
+return strncat (dest, src, 0x10000);
 }
 
 int strcmp(const char *s1, const char *s2)

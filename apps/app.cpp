@@ -16,35 +16,16 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <system.h>
-#include <string.h>
-#include <ipc.h>
-#include <assert.h>
+#include <terminal.h>
 #include <stdio.h>
 
 int main()
 {
-/*Interface("keyboard").wait("get");
-char c = Interface("keyboard").call("get", "");
-printf("got %c\n", c);*/
-/*printf("app: send\n");
-Message(mtUnknown, 3, (void*) "test", 5).send();
-printf("app: sent\n");
-printf("app: %s reply\n", Reply().check() ? "have" : "have not");
-char reply[Reply().length()];
-Reply().data(reply);
-printf("app: got reply '%s'\n", reply);
-Reply().remove();
-printf("app: removed reply\n");
-printf("app: %s reply\n", Reply().check() ? "have" : "have not");*/
-CallPacker cp("getk", "");
-cp.dump();
-
-printf("app: sending...\n");
-Message(mtFunction, 2, cp.data(), cp.size()).send();
-
-printf("app: got reply\n");
-
-char reply[Reply().length()];
-Reply().data(reply);
-printf("app: reply: %c\n", reply[0]);
+Terminal t;
+for(int j = 0; j < 5; j++)
+ {
+ for(int i = 0; i < 10; i++)
+  t.put_string("Hello$ ");
+ t.put_char('\n');
+ }
 }

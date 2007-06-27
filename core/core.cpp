@@ -133,7 +133,6 @@ for(p = pheader; p < pheader + header->e_phnum; p++)
   printf("load_elf: file 0x%X (%i bytes) -> virtual 0x%X (%i bytes)\n", p->p_offset, p->p_filesz, p->p_vaddr, p->p_memsz);
   printf("load_elf: flags = 0x%x, align = %i\n", p->p_flags, p->p_align);
   #endif
-  //TODO make page attributes
   vmm->map(start + p->p_offset, p->p_vaddr, pages, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
   }
  else

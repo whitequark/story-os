@@ -32,8 +32,13 @@ Message* msg = new Message;
 msg->sender = hal->taskman->current->index;
 msg->type = (MessageType) r.ebx;
 msg->length = r.ecx;
-msg->data = malloc(msg->length);
-memcpy(msg->data, (void*) r.edx, msg->length);
+if(r.ecx != 0)
+ {
+ msg->data = malloc(msg->length);
+ memcpy(msg->data, (void*) r.edx, msg->length);
+ }
+else
+ msg->data = NULL;
 
 if(receiver->message != NULL)
  {
@@ -103,13 +108,18 @@ Message* msg = new Message;
 msg->sender = hal->taskman->current->index;
 msg->type = hal->taskman->current->message_pointer->type;
 msg->length = r.ecx;
-
-msg->data = malloc(msg->length);
-memcpy(msg->data, (void*) r.edx, msg->length); //TODO make straight transfer
+if(r.ecx != 0)
+ {
+ msg->data = malloc(msg->length);
+ memcpy(msg->data, (void*) r.edx, msg->length);
+ }
+else
+ msg->data = NULL;
 
 if(receiver->reply != NULL)
  {
- free(receiver->reply->data);
+ if(receiver->reply->length != 0)
+  free(receiver->reply->data);
  delete receiver->reply;
  }
 
@@ -122,7 +132,8 @@ if(hal->taskman->current->message_pointer->next)
 if(hal->taskman->current->message_pointer->prev)
  hal->taskman->current->message_pointer->prev->next = hal->taskman->current->message_pointer->next;
 
-free(hal->taskman->current->message_pointer->data);
+if(hal->taskman->current->message_pointer->length != 0)
+ free(hal->taskman->current->message_pointer->data);
 delete hal->taskman->current->message_pointer;
 
 bool change_message = false;

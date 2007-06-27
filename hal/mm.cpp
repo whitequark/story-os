@@ -75,7 +75,7 @@ if(address == NULL)
  return;
 unsigned int page = ((unsigned int) address) >> 12;
 if(((unsigned int) address) & 0xFFF)
- hal->panic("Attempt to free non-aligned address %X\n", address); //FIXME don't panic
+ hal->panic("Attempt to free non-aligned address %X\n", address);
 if(!(page_bitmap[page] & PAGE_ALLOCATED))
  hal->panic("Attempt to free unallocated memory page: %X\n", address);
 if(!(page_bitmap[page] & ~PAGE_ALLOCATED))

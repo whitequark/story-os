@@ -15,53 +15,21 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <system.h>
-#include <stdio.h>
+#include <terminal.h>
+#include <string.h>
+#include <ipc.h>
 
-int main();
-void init_mallocator();
-
-extern "C" void _start()
+Terminal::Terminal()
 {
-//init_mallocator();
-die(main());
+Interface("terminal").require();
 }
 
-void* morecore(unsigned int count)
+void Terminal::put_char(char c)
 {
-void* ret;
-asm("int $0x31":"=a"(ret):"a"(7),"b"(count));
-return ret;
+Message(Terminal::mtPutChar, Interface("terminal").task(), (void*) &c, 1).send();
 }
 
-void die(unsigned int return_code)
+void Terminal::put_string(char* s)
 {
-asm("int $0x31"::"a"(0),"b"(return_code));
-}
-
-void wait_die(unsigned int tid)
-{
-asm("int $0x31"::"a"(2),"b"(tid));
-}
-
-void delay(unsigned int millis)
-{
-asm("int $0x31"::"a"(4),"b"(millis));
-}
-
-void wait_irq(unsigned int irq)
-{
-asm("int $0x31"::"a"(3),"b"(irq));
-}
-
-void putchar(char c)
-{
-int tmp;
-asm("int $0x31":"=a"(tmp):"a"(5),"b"(c));
-}
-
-void textcolor(char c)
-{
-int tmp;
-asm("int $0x31":"=a"(tmp):"a"(6),"b"(c));
+Message(Terminal::mtPutString, Interface("terminal").task(), (void*) s, strlen(s)).send();
 }

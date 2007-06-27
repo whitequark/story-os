@@ -27,7 +27,7 @@ va_list vl;
 
 va_start(vl, fmt);
 textcolor(WHITE + BG_MAGENTA);
-printf("Task %i has caused an unrecoverable error:\n", hal->taskman->current->index); //TODO current task
+printf("Task %i has caused an unrecoverable error:\n", hal->taskman->current->index);
 textcolor(7);
 vprintf(fmt, vl);
 

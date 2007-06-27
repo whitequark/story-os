@@ -1,6 +1,6 @@
 CFLAGS=-w -c -Wall -g2 -nostartfiles -nostdlib -fno-rtti -fno-exceptions -fno-leading-underscore
 ROOT=/root/story-os/trunk
-INCDIR=-I$(ROOT)/include -I$(ROOT)/libc/include -I$(ROOT)/hal/include -I$(ROOT)/core/include -I$(ROOT)/user/include -I$(ROOT)/core/drivers/include -I$(ROOT)/api/include
+INCDIR=-I$(ROOT)/include -I$(ROOT)/libc/include -I$(ROOT)/hal/include -I$(ROOT)/core/include -I$(ROOT)/user/include -I$(ROOT)/core/drivers/include -I$(ROOT)/api/include -I$(ROOT)/services/include
 
 %.o: %.c
 	@gcc $(INCDIR) $(CFLAGS) -o $@ $<

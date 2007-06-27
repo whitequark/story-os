@@ -158,11 +158,11 @@ handlers = new SyscallHandler[0x1000];
 hal->idt->set_trap(0x31, &syscall, hal->sys_code, 3);
 
 add(0, &syscall_die);
-add(1, &syscall_kill); //FIXME !
+add(1, &syscall_kill);
 add(2, &syscall_wait_die);
 add(3, &syscall_wait_irq);
 add(4, &syscall_delay);
-add(5, &syscall_putchar); //FIXME !
-add(6, &syscall_textcolor); //FIXME !
+add(5, &syscall_putchar);
+add(6, &syscall_textcolor);
 add(7, &syscall_morecore);
 }

@@ -20,6 +20,7 @@
 #include <system.h>
 #include <assert.h>
 #include <ipc.h>
+#include <terminal.h>
 
 void putchar(char c);
 
@@ -126,10 +127,7 @@ outb(0x21, 0);
 outb(0x60, 0xF4);
 while(inb(0x64) & 1)
  inb(0x60);
-assert(Interface("keyboard").add() == 0);
-assert(Interface("keyboard").add("get", "", "b") == 0);
-assert(Interface("screen").add() == 0);
-assert(Interface("screen").
+assert(Interface("terminal").add() == 0);
 printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 MessageQuery q;
@@ -139,17 +137,37 @@ bool leftctrl = 0, rightctrl = 0, leftshift = 0, rightshift = 0, leftalt = 0, ri
 for(;;)
  {
  unsigned char scancode;
- if(q.pending())
+ while(q.pending())
   {
-  printf("keyboard: got message: type %i\n", q.type());
-  if(q.type() == mtFunction)
+  switch(q.type())
    {
-   char msg[q.length()];
-   q.data(msg);
-   CallUnpacker up(msg);
-   printf("keyboard: function name '%s', arguments '%s'\n", up.get_name(), up.get_args());
+   case Terminal::mtPutChar:
+   if(q.length() == 1)
+    {
+    char c;
+    q.data(&c);
+    putchar(c);
+    }
+   Message(NULL, 0).reply();
+   break;
+   
+   case Terminal::mtPutString:
+   if(q.length() > 1)
+    {
+    char c[q.length()];
+    q.data(c);
+    for(int i = 0; i < q.length(); i++)
+     putchar(c[i]);
+    }
+   else
+    {
+    char c;
+    q.data(&c);
+    putchar(c);
+    }    
+   Message(NULL, 0).reply();
+   break;
    }
-  Message((void*) "a", 1).reply();
   }
   
  if(inb(0x64) & 1)

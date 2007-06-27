@@ -24,20 +24,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-Message::Message(MessageType type, unsigned int receiver, void* data, unsigned int length)
+Message::Message(unsigned int type, unsigned int receiver, void* data, unsigned int length)
 {
-this->type = type;
+this->type = (MessageType) type;
 this->receiver = receiver;
 this->data = data;
 this->length = length;
-assert(length != 0);
 }
 
 Message::Message(void* data, unsigned int length)
 {
 this->data = data;
 this->length = length;
-assert(length != 0);
 }
 
 bool Message::send()
