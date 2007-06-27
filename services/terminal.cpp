@@ -128,6 +128,8 @@ while(inb(0x64) & 1)
  inb(0x60);
 assert(Interface("keyboard").add() == 0);
 assert(Interface("keyboard").add("get", "", "b") == 0);
+assert(Interface("screen").add() == 0);
+assert(Interface("screen").
 printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 MessageQuery q;
@@ -139,8 +141,15 @@ for(;;)
  unsigned char scancode;
  if(q.pending())
   {
+  printf("keyboard: got message: type %i\n", q.type());
+  if(q.type() == mtFunction)
+   {
+   char msg[q.length()];
+   q.data(msg);
+   CallUnpacker up(msg);
+   printf("keyboard: function name '%s', arguments '%s'\n", up.get_name(), up.get_args());
+   }
   Message((void*) "a", 1).reply();
-  printf("replying");
   }
   
  if(inb(0x64) & 1)

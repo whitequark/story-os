@@ -2,7 +2,7 @@ include ../template.mk
 LIBC=../libc/*.o
 API=../api/*.o
 
-all:	app.o app
+all:	terminal.o terminal
 
 %: %.o
 	@echo "Linking '$@'"

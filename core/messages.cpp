@@ -37,15 +37,17 @@ memcpy(msg->data, (void*) r.edx, msg->length);
 
 if(receiver->message != NULL)
  {
- Message* last;
- for(last = receiver->message; last->next != 0; last = last->next);
- msg->next = NULL;
- last->next = msg;
+ msg->next = receiver->message;
+ msg->prev = NULL;
+ receiver->message->prev = msg;
+ receiver->message = msg->next;
  }
 else
  {
  msg->next = NULL;
+ msg->prev = NULL;
  receiver->message = msg;
+ receiver->message_pointer = receiver->message;
  }
 
 if(receiver->reason == rsMessage)
@@ -56,71 +58,104 @@ asm("ljmp $0x30, $0");
 
 return 0;
 }
+
 unsigned int syscall_check(Registers r)
 {
-return hal->taskman->current->message != NULL;
+return hal->taskman->current->message_pointer != NULL;
 }
+
 unsigned int syscall_length(Registers r)
 {
-return hal->taskman->current->message->length;
+return hal->taskman->current->message_pointer->length;
 }
+
 unsigned int syscall_type(Registers r)
 {
-return hal->taskman->current->message->type;
+return hal->taskman->current->message_pointer->type;
 }
+
 unsigned int syscall_sender(Registers r)
 {
-return hal->taskman->current->message->sender;
+return hal->taskman->current->message_pointer->sender;
 }
+
 unsigned int syscall_data(Registers r)
 {
-memcpy((void*)r.ebx, hal->taskman->current->message->data, hal->taskman->current->message->length);
+memcpy((void*)r.ebx, hal->taskman->current->message_pointer->data, hal->taskman->current->message_pointer->length);
 }
+
 unsigned int syscall_wait(Registers r)
 {
-if(hal->taskman->current->message == NULL)
+if(hal->taskman->current->message_pointer == NULL)
  {
  hal->taskman->current->reason = rsMessage;
- asm("ljmp $0x30, $0"); //FIXME
+ asm("ljmp $0x30, $0");
  }
 }
+
 unsigned int syscall_reply(Registers r)
 {
 Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
 if(!receiver)
  return 1;
+
 Message* msg = new Message;
 msg->sender = hal->taskman->current->index;
-msg->type = hal->taskman->current->message->type;
+msg->type = hal->taskman->current->message_pointer->type;
 msg->length = r.ecx;
+
 msg->data = malloc(msg->length);
 memcpy(msg->data, (void*) r.edx, msg->length); //TODO make straight transfer
 
 if(receiver->reply != NULL)
+ {
+ free(receiver->reply->data);
  delete receiver->reply;
+ }
+
 receiver->reply = msg;
 assert(receiver->reason == rsReply);
 receiver->reason = rsNone;
 
-msg = hal->taskman->current->message;
-hal->taskman->current->message = msg->next;
-free(msg->data);
-delete msg;
+if(hal->taskman->current->message_pointer->next)
+ hal->taskman->current->message_pointer->next->prev = hal->taskman->current->message_pointer->prev;
+if(hal->taskman->current->message_pointer->prev)
+ hal->taskman->current->message_pointer->prev->next = hal->taskman->current->message_pointer->next;
+
+free(hal->taskman->current->message_pointer->data);
+delete hal->taskman->current->message_pointer;
+
+bool change_message = false;
+if(hal->taskman->current->message == hal->taskman->current->message_pointer)
+ change_message = true;
+
+if(hal->taskman->current->message_pointer->next == NULL)
+ hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->prev;
+else
+ hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->next;
+
+if(change_message)
+ hal->taskman->current->message = hal->taskman->current->message_pointer;
 
 return 0;
 }
+
 unsigned int syscall_reply_check(Registers r)
 {
 return hal->taskman->current->reply != NULL;
 }
+
 unsigned int syscall_reply_length(Registers r)
 {
 return hal->taskman->current->reply->length;
 }
+
 unsigned int syscall_reply_data(Registers r)
 {
 memcpy((void*) r.ebx, hal->taskman->current->reply->data, hal->taskman->current->reply->length);
+return 0;
 }
+
 unsigned int syscall_reply_remove(Registers r)
 {
 free(hal->taskman->current->reply->data);
@@ -129,10 +164,34 @@ hal->taskman->current->reply = NULL;
 return 0;
 }
 
+unsigned int syscall_reset(Registers r)
+{
+hal->taskman->current->message_pointer = hal->taskman->current->message;
+return 0;
+}
+
+unsigned int syscall_next(Registers r)
+{
+if(hal->taskman->current->message_pointer == NULL)
+ return 0;
+else if(hal->taskman->current->message_pointer->next == NULL)
+ {
+ hal->taskman->current->message_pointer = hal->taskman->current->message;
+ return 1;
+ }
+else
+ {
+ hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->next;
+ return 0;
+ }
+}
+
 Messenger::Messenger()
 {
 hal->syscalls->add(50, &syscall_check);
 hal->syscalls->add(51, &syscall_send);
+hal->syscalls->add(52, &syscall_next);
+hal->syscalls->add(53, &syscall_reset);
 hal->syscalls->add(54, &syscall_length);
 hal->syscalls->add(55, &syscall_type);
 hal->syscalls->add(56, &syscall_data);
@@ -143,15 +202,4 @@ hal->syscalls->add(60, &syscall_reply_check);
 hal->syscalls->add(61, &syscall_reply_length);
 hal->syscalls->add(62, &syscall_reply_data);
 hal->syscalls->add(63, &syscall_reply_remove);
-}
-
-void Messenger::clear()
-{
-Message* msg;
-for(msg = hal->taskman->current->message; msg != NULL; msg = msg->next)
- {
- free(msg->data);
- delete msg;
- }
-hal->taskman->current->message = NULL;
 }

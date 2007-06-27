@@ -32,19 +32,11 @@ unsigned int syscall_icheck(Registers r)
 return core->interfaces->get((char*)r.ebx) != NULL;
 }
 
-unsigned int syscall_fregister(Registers r)
+unsigned int syscall_igettask(Registers r)
 {
-return core->interfaces->function_add((char*)r.ebx, (char*) r.ecx, (char*) r.edx);
-}
-
-unsigned int syscall_fcheck(Registers r)
-{
-return core->interfaces->function_get((char*)r.ebx, (char*) r.ecx) != NULL;
-}
-
-unsigned int syscall_fcheck_parameters(Registers r)
-{
-return core->interfaces->function_get((char*)r.ebx, (char*) r.ecx, (char*) r.edx) != NULL;
+if(core->interfaces->get((char*)r.ebx) == NULL)
+ return 0;
+return core->interfaces->get((char*)r.ebx)->task;
 }
 
 InterfaceManager::InterfaceManager()
@@ -52,9 +44,7 @@ InterfaceManager::InterfaceManager()
 interface = NULL;
 hal->syscalls->add(100, &syscall_iregister);
 hal->syscalls->add(101, &syscall_icheck);
-hal->syscalls->add(102, &syscall_fregister);
-hal->syscalls->add(103, &syscall_fcheck);
-hal->syscalls->add(104, &syscall_fcheck_parameters);
+hal->syscalls->add(102, &syscall_igettask);
 }
 
 Interface* InterfaceManager::get(char* name)
@@ -64,61 +54,6 @@ for(intf = interface; intf; intf = intf->next)
  if(!strcmp(intf->name, name))
   return intf;
 return NULL;
-}
-
-Function* InterfaceManager::function_get(char* iname, char* fname)
-{
-Interface* intf = get(iname);
-if(!intf)
- return NULL;
-Function* f;
-for(f = intf->function; f; f = f->next)
- if(!strcmp(f->name, fname))
-  return f;
-return NULL;
-}
-
-Function* InterfaceManager::function_get(char* iname, char* fname, char* parameters)
-{
-Interface* intf = get(iname);
-if(!intf)
- return NULL;
-Function* f;
-for(f = intf->function; f; f = f->next)
- if(!strcmp(f->name, fname) && !strcmp(f->parameters, parameters))
-  return f;
-return NULL;
-}
-
-bool InterfaceManager::function_add(char* iname, char* fname, char* parameters)
-{
-Interface* intf = get(iname);
-if(!intf)
- {
- #ifdef _DEBUGGING_INTERFACE_
- printf("Cannot register function '%s': no interface '%s'\n", fname, iname);
- #endif
- return 1;
- }
-if(!function_get(iname, fname))
- {
- Function* func = new Function;
- func->name = strdup(fname);
- func->next = intf->function;
- func->parameters = strdup(parameters);
- intf->function = func;
- #ifdef _DEBUGGING_INTERFACE_
- printf("Registered function '%s' in interface '%s'\n", fname, iname);
- #endif
- return 0;
- }
-else
- {
- #ifdef _DEBUGGING_INTERFACE_
- printf("Cannot register function '%s' in interface '%s'\n", fname, iname);
- #endif
- return 1;
- }
 }
 
 bool InterfaceManager::add(char* name)
@@ -157,13 +92,6 @@ if(interface != NULL)
    {
    Interface* n = intf->next;
    Interface* p = intf->prev;
-   Function* f;
-   for(f = intf->function; f; f = f->next) 
-    {
-    free(f->name);
-    free(f->parameters);
-    delete f;
-    }
    free(intf->name);
    delete intf;
    if(interface == intf)

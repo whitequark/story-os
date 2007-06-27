@@ -40,7 +40,6 @@ hal/include/vmm.h
 hal/vmm.cpp
 core/core.cpp
 core/include/core.h
-apps/keyboard.cpp
 api/include/system.h
 api/system.cpp
 core/interface.cpp
@@ -60,7 +59,6 @@ hal/include/terminal_driver.h
 core/service.cpp
 core/include/service.h
 apps/app.cpp
-apps/screen.cpp
 api/include/assert.h
 api
 api/assert.cpp

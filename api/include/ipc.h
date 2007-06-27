@@ -13,6 +13,7 @@ void data(void* data);
 void* alloc_data();
 unsigned int sender();
 void wait();
+bool next();
 };
 
 class Message
@@ -37,27 +38,6 @@ void data(void* data);
 void remove();
 };
 
-class CallPacker
-{
-private:
-char* packed;
-unsigned int length;
-unsigned int pointer;
-unsigned int apointer;
-char* name;
-char* args;
-
-public:
-void dump();
-CallPacker(char* name, char* args);
-bool push(char b);
-bool push(short w);
-bool push(int d);
-bool push(char* s);
-void* data();
-unsigned int size();
-};
-
 class Interface
 {
 private:
@@ -70,13 +50,7 @@ bool add();
 bool present();
 void require();
 void wait();
-bool add(char* name, char* parameters, char* returnvalue);
-bool present(char* name);
-void require(char* name);
-void wait(char* name);
-bool present(char* name, char* parameters);
-void require(char* name, char* parameters);
-void wait(char* name, char* parameters);
+unsigned int task();
 };
 
 #endif

@@ -73,6 +73,7 @@ unsigned int priority;
 VirtualMemoryManager* vmm;
 
 Message* message;
+Message* message_pointer;
 Message* reply;
 
 WaitingReason reason;

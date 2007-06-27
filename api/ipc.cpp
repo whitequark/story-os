@@ -99,6 +99,13 @@ asm("int $0x31":"=a"(ret):"a"(57));
 return ret;
 }
 
+bool MessageQuery::next()
+{
+unsigned int ret;
+asm("int $0x31":"=a"(ret):"a"(52));
+return ret;
+}
+
 unsigned int Reply::length()
 {
 unsigned int ret;
@@ -156,156 +163,9 @@ void Interface::wait()
 while(!present());
 }
 
-bool Interface::add(char* fname, char* parameters, char* returnvalue)
+unsigned int Interface::task()
 {
 unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(102),"b"(name),"c"(fname),"d"(parameters),"S"(returnvalue));
+asm("int $0x31":"=a"(ret):"a"(102),"b"(name));
 return ret;
-}
-
-bool Interface::present(char* fname)
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(103),"b"(name),"c"(fname));
-return ret;
-}
-
-bool Interface::present(char* fname, char* parameters)
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(104),"b"(name),"c"(fname),"d"(parameters));
-return ret;
-}
-
-void Interface::require(char* fname)
-{
-require();
-if(!present(fname))
- {
- printf("%zRequired function '%s' in '%s' not present. Terminating...%z\n", LIGHTRED, fname, name, LIGHTGRAY);
- die(1);
- }
-}
-
-void Interface::require(char* fname, char* parameters)
-{
-require();
-if(!present(fname, parameters))
- {
- printf("%zRequired function '%s'('%s') in '%s' not present. Terminating...%z\n", LIGHTRED, fname, parameters, name, LIGHTGRAY);
- die(1);
- }
-}
-
-void Interface::wait(char* fname)
-{
-while(!present(fname));
-}
-
-void Interface::wait(char* fname, char* parameters)
-{
-while(!present(fname, parameters));
-}
-
-CallPacker::CallPacker(char* name, char* args)
-{
-this->name = name;
-this->args = args;
-length = strlen(name) + 1 + strlen(args) + 1;
-for(int i = 0; i < strlen(args); i++)
- switch(args[i])
-  {
-  case 'b':
-  length++;
-  break;
-  
-  case 'w':
-  length += 2;
-  break;
-  
-  case 'd':
-  length += 4;
-  break;
-  }
-packed = (char*) morecore(1); //HACK malloc(length);
-strcpy(packed, name);
-strcpy((char*) ((unsigned int) packed + strlen(name)+1), args);
-
-pointer = strlen((char*) packed) + 1 + strlen((char*) ((unsigned int) packed) + strlen(packed) + 1) + 1;
-apointer = 0;
-}
-
-void CallPacker::dump()
-{
-printf("Name: '%s', arguments: '%s'\n", packed, ((unsigned int) packed) + strlen(packed) + 1);
-printf("Data dump:\n");
-unsigned int n = 0;
-for(; n < length; n++)
- {
- printf("%x ", packed[n]);
- if(n == length-1)
-  {
-  int k;
-  for(k = 0; k < (n / 16 + 1) * 16 - n - 1; k++)
-   printf("   ");
-  }
- if(n % 16 == 15 || n == length-1)
-  {
-  int k;
-  printf(" |");
-  for(k = n - 15; k < n; k++)
-   if(packed[k] >= ' ' && packed[k] <= 0x80)
-    printf("%c", packed[k]);
-   else
-    printf(".");
-  printf("|");
-  printf("\n");
-  }
- }
-}
-
-bool CallPacker::push(char c)
-{
-if(args[apointer] != 'b')
- return false;
-else
- {
- apointer++;
- *((char*)(((unsigned int)packed) + pointer)) = c;
- pointer++;
- }
-}
-
-bool CallPacker::push(int i)
-{
-if(args[apointer] != 'd')
- return false;
-else
- {
- apointer++;
- *((int*)(((unsigned int)packed) + pointer)) = i;
- pointer += 4;
- }
-}
-
-bool CallPacker::push(short s)
-{
-if(args[apointer] != 'w')
- return false;
-else
- {
- apointer++;
- *((short*)(((unsigned int)packed) + pointer)) = s;
- pointer += 2;
- }
-}
-
-void* CallPacker::data()
-{
-return (void*) packed;
-}
-
-unsigned int CallPacker::size()
-{
-return length;
 }

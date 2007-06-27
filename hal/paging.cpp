@@ -52,9 +52,6 @@ if(table == NULL)
  table = (PageTable*) hal->mm->alloc(1);
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
- #ifdef _DEBUGGING_PAGING_
- printf("pg: created table at %X\n", table);
- #endif
  }
 return table->page[page & 0x3F];
 }
@@ -67,14 +64,9 @@ if(table == NULL)
  table = (PageTable*) hal->mm->alloc(1);
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
- #ifdef _DEBUGGING_PAGING_
- printf("pg: created table at %X\n", table);
- #endif
  }
+asm("invlpg (%0)"::"r" (page): "memory");
 table->page[page & 0x3F] = value;
-#ifdef _DEBUGGING_PAGING_
-printf("pg: set page %X in directory %X, table %X to %X\n", page, pagedir, table, value);
-#endif
 }
 
 void Paging::load_cr3(PageDirectory* cr3)

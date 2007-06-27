@@ -36,12 +36,15 @@ printf("app: got reply '%s'\n", reply);
 Reply().remove();
 printf("app: removed reply\n");
 printf("app: %s reply\n", Reply().check() ? "have" : "have not");*/
-CallPacker cp("getk", "dddddb");
+CallPacker cp("getk", "");
 cp.dump();
 
+printf("app: sending...\n");
 Message(mtFunction, 2, cp.data(), cp.size()).send();
+
+printf("app: got reply\n");
 
 char reply[Reply().length()];
 Reply().data(reply);
-printf("reply: %c\n", reply[0]);
+printf("app: reply: %c\n", reply[0]);
 }

@@ -9,14 +9,13 @@ unsigned int sender;
 MessageType type;
 void* data;
 unsigned int length;
-SMessage* next;
+SMessage *next, *prev;
 } Message;
 
 class Messenger
 {
 public:
 Messenger();
-void clear();
 };
 
 #endif
