@@ -17,7 +17,6 @@
 
 #include <syscall.h>
 #include <hal.h>
-#include <stdio.h>
 
 //SYSCALLS
 /*
@@ -30,7 +29,7 @@
   5	putc	bl  = char to put
   6	tcolor	bl  = color
   7	palloc	ebx = page count
-  8	getiopl
+  8	map	ebx = from ecx = to edx = cnt
 */
 
 unsigned int syscall_die(Registers r)
@@ -82,6 +81,17 @@ unsigned int syscall_morecore(Registers r)
 {
 unsigned int addr = (unsigned int)hal->taskman->current->vmm->alloc(r.ebx);
 return addr;
+}
+
+unsigned int syscall_map(Registers r)
+{
+if(hal->taskman->current->pl > 1)
+ return 1;
+else
+ {
+ hal->taskman->current->vmm->map(r.ebx, r.ecx, r.edx, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+ return 0;
+ }
 }
 
 /*
@@ -165,4 +175,5 @@ add(4, &syscall_delay);
 add(5, &syscall_putchar);
 add(6, &syscall_textcolor);
 add(7, &syscall_morecore);
+add(8, &syscall_map);
 }

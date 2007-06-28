@@ -2,6 +2,7 @@
 #define _HAL_H_
 
 #include <multiboot.h>
+#include <kprintf.h>
 #include <terminal_driver.h>
 #include <gdt.h>
 #include <stubs.h>

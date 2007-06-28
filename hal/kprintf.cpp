@@ -16,10 +16,10 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. 
 
 #include <stdarg.h>
-#include <stdio.h>
+#include <kprintf.h>
 
-void putchar(char c); //if in kernel, implemented @ main.cpp
-void textcolor(char c); //same
+void putchar(char c); 
+void textcolor(char c);
 
 void puthexd(unsigned char digit)
 {

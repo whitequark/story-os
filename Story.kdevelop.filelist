@@ -3,10 +3,8 @@ Makefile
 libc/Makefile
 libc/malloc.cpp
 libc/memory.cpp
-libc/printf.cpp
 libc/string.cpp
 libc/include/stdarg.h
-libc/include/stdio.h
 libc/include/stdlib.h
 libc/include/string.h
 include/story.h
@@ -59,9 +57,10 @@ hal/include/terminal_driver.h
 core/service.cpp
 core/include/service.h
 apps/app.cpp
-api/include/assert.h
 api
 api/assert.cpp
+api/include
+api/include/assert.h
 api/Makefile
 apps
 apps/Makefile
@@ -69,7 +68,13 @@ core
 core/include
 core/include/elf.h
 core/include/stdint.h
+hal
+hal/include
+hal/include/kprintf.h
+hal/kprintf.cpp
 services
+services/api_terminal.cpp
 services/include
 services/include/terminal.h
-services/api_terminal.cpp
+services/Makefile
+services/terminal.cpp

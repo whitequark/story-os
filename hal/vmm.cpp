@@ -18,7 +18,6 @@
 #include <hal.h>
 #include <vmm.h>
 #include <string.h>
-#include <stdio.h>
 
 bool ok;
 

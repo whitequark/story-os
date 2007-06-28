@@ -16,13 +16,12 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <colors.h>
-#include <stdio.h>
 #include <system.h>
 #include <assert.h>
 #include <ipc.h>
 #include <terminal.h>
-
-void putchar(char c);
+#include <string.h>
+#include <colors.h>
 
 const char scancodes_shifted[] = {
   0,
@@ -108,6 +107,9 @@ const char scancodes[] = {
   0, 0, 0, 0, 0, 0, 0, 0
 };
 
+#define VGA_CRT_IC      0x3D4
+#define VGA_CRT_DC      0x3D5
+
 void outb(unsigned short port, unsigned char value)
 {
 asm("outb %b0,%w1":: "a"(value), "d"(port));
@@ -120,15 +122,83 @@ asm("inb %w1, %b0": "=a"(value): "d"(port));
 return value;
 }
 
+int cursorx, cursory;
+char color;
+
+void update_cursor()
+{
+unsigned short offset = cursorx + cursory * 80;
+outb(VGA_CRT_IC, 0x0f);
+outb(VGA_CRT_DC, offset & 0xff);
+offset >>= 8;
+outb(VGA_CRT_IC, 0x0e);
+outb(VGA_CRT_DC, offset & 0xff);
+}
+
+void putchar(char ch)
+{
+unsigned short* lfb = (unsigned short*) 0xf0000000;
+if(ch == 0)
+ return;
+
+if(ch == 8)
+ cursorx--;
+else if(ch == '\n')
+ {
+ cursorx = 0;
+ cursory++;
+ }
+else
+ lfb[(cursorx++) + cursory * 80] = color << 8 | ch;
+ 
+if(cursorx == 80)
+ { cursorx = 0; cursory++; }
+if(cursorx == -1)
+ { cursorx = 79; cursory--; }
+if(cursory == 25)
+ {
+ cursory = 24;
+ cursorx = 0;
+ memcpy(lfb, lfb + 80, 24*80*2);
+ memset(lfb + 80*24, 0, 80*2);
+ }
+if(cursory == -1)
+ { cursory = 0; cursorx = 0; }
+ 
+if(ch == 8)
+ lfb[cursorx + cursory * 80] = 0x0700;
+ 
+update_cursor();
+}
+
+void puts(char* s)
+{
+for(int i = 0; i < strlen(s); i++)
+ putchar(s[i]);
+}
+
 int main()
 {
-printf("Initializing keyboard... ");
+cursorx = 0;
+cursory = 0;
+color = LIGHTGRAY;
+map_pages(0x000B8000, 0xf0000000, 1);
+
+unsigned short* lfb = (unsigned short*) 0xf0000000;
+for(int k = 0; k < 25 * 80; k++)
+ lfb[k] = 0x0700;
+update_cursor();
+
+puts("Story OS comes with ABSOLUTELY NO WARRANTY; for details type `cat warranty'\n");
+puts("This is free software, and you are welcome to redistribute it\n");
+puts("under certain conditions; type `cat copying' for details.\n");
+puts("(I think, some kind of shell will write it. Sometimes:)\n\n");
+
 outb(0x21, 0);
 outb(0x60, 0xF4);
 while(inb(0x64) & 1)
  inb(0x60);
-assert(Interface("terminal").add() == 0);
-printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+Interface("terminal").add();
 
 MessageQuery q;
 
@@ -148,7 +218,6 @@ for(;;)
     q.data(&c);
     putchar(c);
     }
-   Message(NULL, 0).reply();
    break;
    
    case Terminal::mtPutString:
@@ -156,8 +225,7 @@ for(;;)
     {
     char c[q.length()];
     q.data(c);
-    for(int i = 0; i < q.length(); i++)
-     putchar(c[i]);
+    puts(c);
     }
    else
     {
@@ -165,9 +233,14 @@ for(;;)
     q.data(&c);
     putchar(c);
     }    
-   Message(NULL, 0).reply();
+   break;
+   
+   case Terminal::mtColor:
+   if(q.length() == 1)
+    q.data(&color);
    break;
    }
+  Message(NULL, 0).reply();
   }
   
  if(inb(0x64) & 1)
@@ -195,7 +268,7 @@ for(;;)
    
    case 0xE0:
    escaped = true;
-   continue;
+   break;
    
    default:
    if(escaped)
@@ -266,20 +339,5 @@ for(;;)
     putchar(ascii);
    }
   }
- if(leftshift && rightshift)
-  *((int*)0) = 0;
- /*char* s = "csa_asc";
- s[0] = leftctrl ? 'C' : 'c';
- s[1] = leftshift ? 'S' : 's';
- s[2] = leftalt ? 'A' : 'a';
- s[4] = rightalt ? 'A' : 'a';
- s[5] = rightshift ? 'S' : 's';
- s[6] = rightctrl ? 'C' : 'c';
- int n;
- for(n = 0; n < 7; n++)
-  {
-  unsigned short* bf = (unsigned short*) (0xc0000000 + n*2 + 38*2);
-  *bf = s[n] | (WHITE << 8);
-  }*/
  }
 }

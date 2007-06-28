@@ -18,7 +18,6 @@
 #include <hal.h>
 #include <messages.h>
 #include <story.h>
-#include <stdio.h>
 #include <string.h>
 #include <core.h>
 #include <assert.h>

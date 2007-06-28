@@ -22,10 +22,10 @@
 int main()
 {
 Terminal t;
-for(int j = 0; j < 5; j++)
+t.color(LIGHTGREEN);
+while(1)
  {
- for(int i = 0; i < 10; i++)
-  t.put_string("Hello$ ");
- t.put_char('\n');
+ t.put_string("THAT IS MY MEGA APP!!!!!\n");
+ delay(1000);
  }
 }

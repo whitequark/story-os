@@ -18,11 +18,13 @@
 #include <terminal_driver.h>
 #include <hal.h>
 #include <string.h>
+#include <colors.h>
 
 KernelTerminalDriver::KernelTerminalDriver() : lfb((short unsigned*)hal->lfb), cursorx(0), cursory(0)
 {
 update_cursor();
-color = LIGHTGRAY;}
+color = LIGHTGRAY;
+}
 
 void KernelTerminalDriver::put_char(char ch, int x, int y)
 {
@@ -68,7 +70,7 @@ void KernelTerminalDriver::clear()
 {
 int i;
 for(i = 0; i < 80*25; i++)
- lfb[i] = 0;
+ lfb[i] = 0x0700;
 }
 
 void KernelTerminalDriver::set_color(unsigned char color)

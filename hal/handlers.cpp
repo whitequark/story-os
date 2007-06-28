@@ -17,7 +17,6 @@
 
 #include <idt.h>
 #include <hal.h>
-#include <stdio.h>
 #include <colors.h>
 
 void register_exceptions();

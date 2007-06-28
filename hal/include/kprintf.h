@@ -1,5 +1,5 @@
-#ifndef _STDIO_H_
-#define _STDIO_H_
+#ifndef _KPRINTF_H_
+#define _KPRINTF_H_
 
 #include <stdarg.h>
 #include <story.h>

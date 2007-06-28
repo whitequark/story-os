@@ -21,7 +21,7 @@
 extern "C" void __assert_fail (__const char *__assertion, __const char *__file,
                            unsigned int __line, __const char *__function)
 {
-printf("%zASSERTION FAILED: %s\nFile: '%s' Line: %i\nFunc: '%s'\n", LIGHTRED, __assertion, __file, __line, __function);
+//printf("%zASSERTION FAILED: %s\nFile: '%s' Line: %i\nFunc: '%s'\n", LIGHTRED, __assertion, __file, __line, __function); FIXME
 for(;;);
 }
 

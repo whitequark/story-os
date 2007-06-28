@@ -19,7 +19,6 @@
 #include <task.h>
 #include <hal.h>
 #include <core.h>
-#include <stdio.h>
 #include <string.h>
 
 unsigned int syscall_iregister(Registers r)

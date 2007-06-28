@@ -20,7 +20,6 @@
 #include <string.h>
 #include <core.h>
 #include <colors.h>
-#include <stdio.h>
 #include <hal.h>
 
 ServiceManager::ServiceManager()

@@ -17,7 +17,6 @@
 
 #include <hal.h>
 #include <task.h>
-#include <stdio.h>
 #include <assert.h>
 #include <colors.h>
 #include <stdlib.h>
@@ -54,7 +53,7 @@ hal->taskman->scheduler();
 extern "C" void timer_handler()
 {
 static int d;
-const int p = 10;
+const int p = 300;
 char c[4] = { '\\', '|', '/', '-' };
 asm("movb %0, 0xB8000+80*2-1"::"a"(WHITE));
 asm("movb %0, 0xB8000+80*2-2"::"a"(c[(d++)/p]));

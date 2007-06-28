@@ -17,7 +17,6 @@
 
 #include <hal.h>
 #include <string.h>
-#include <stdio.h>
 
 //high bit
 #define PAGE_ALLOCATED	0x80000000

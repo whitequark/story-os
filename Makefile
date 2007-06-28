@@ -1,6 +1,6 @@
 OBJDIRS=hal libc core
 FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)
-VERSION=0.47
+VERSION=0.48
 
 all:
 	@echo "WARNING: If it does not compile, check path in template.mk!"
@@ -11,7 +11,7 @@ all:
 	@make -C services
 	@make -C apps
 	@echo "Linking kernel"
-	@ld -e start -Ttext 0x200000 $(FILES) -o output/kernel --oformat elf32-i386	
+	@ld -e start -Ttext 0x200000 $(FILES) -o output/kernel --oformat elf32-i386
 	
 	@expr `cat .build` + 1 > .build
 	@echo "/* include/version.h" > include/version.h

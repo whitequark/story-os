@@ -17,12 +17,11 @@
 
 #include <clock.h>
 #include <hal.h>
-#include <stdio.h>
 
 Clock::Clock()
 {
 ticks = 0;
-hz = 100;
+hz = 1000;
 hal->outb(0x43, 0x36);
 hal->outb(0x40, (1193180 / (unsigned int)hz) & 0xff);
 hal->outb(0x40, ((1193180 / (unsigned int)hz) >> 8) & 0xff); 

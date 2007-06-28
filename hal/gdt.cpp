@@ -17,7 +17,6 @@
 
 #include <gdt.h>
 #include <colors.h>
-#include <stdio.h>
 #include <string.h>
 #include <hal.h>
 

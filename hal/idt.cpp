@@ -17,7 +17,6 @@
 
 #include <idt.h>
 #include <string.h>
-#include <stdio.h>
 #include <hal.h>
 
 struct IDTRegister

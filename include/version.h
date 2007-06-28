@@ -1,4 +1,4 @@
 /* include/version.h
    Generated automatically, do not modify!*/
-#define VERSION "0.47"
-#define BUILD 655
+#define VERSION "0.48"
+#define BUILD 783

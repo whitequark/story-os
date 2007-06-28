@@ -54,14 +54,9 @@ void wait_irq(unsigned int irq)
 asm("int $0x31"::"a"(3),"b"(irq));
 }
 
-void putchar(char c)
+bool map_pages(unsigned int physical_addr, unsigned int virtual_addr, unsigned int count)
 {
-int tmp;
-asm("int $0x31":"=a"(tmp):"a"(5),"b"(c));
-}
-
-void textcolor(char c)
-{
-int tmp;
-asm("int $0x31":"=a"(tmp):"a"(6),"b"(c));
+bool ret;
+asm("int $0x31":"=a"(ret):"a"(8),"b"(physical_addr),"c"(virtual_addr),"d"(count));
+return ret;
 }

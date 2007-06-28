@@ -19,7 +19,6 @@
 #include <story.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <hal.h>
 
 void* grow(int npages);
@@ -118,7 +117,7 @@ mb_t *mb;
 mb = (mb_t*) ((unsigned int)ptr - sizeof(mb_t));
 if(mb->size == 0) 
  {
- printf("ATTEMPT TO REALLOC ZERO-LENGTH MEMORY BLOCK. PTR: %X\n", ptr);
+ //printf("ATTEMPT TO REALLOC ZERO-LENGTH MEMORY BLOCK. PTR: %X\n", ptr);
  for(;;);
  }
 

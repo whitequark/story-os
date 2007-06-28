@@ -21,7 +21,7 @@
 
 Terminal::Terminal()
 {
-Interface("terminal").require();
+Interface("terminal").wait();
 }
 
 void Terminal::put_char(char c)
@@ -29,7 +29,12 @@ void Terminal::put_char(char c)
 Message(Terminal::mtPutChar, Interface("terminal").task(), (void*) &c, 1).send();
 }
 
+void Terminal::color(char c)
+{
+Message(Terminal::mtColor, Interface("terminal").task(), (void*) &c, 1).send();
+}
+
 void Terminal::put_string(char* s)
 {
-Message(Terminal::mtPutString, Interface("terminal").task(), (void*) s, strlen(s)).send();
+Message(Terminal::mtPutString, Interface("terminal").task(), (void*) s, strlen(s) + 1).send();
 }

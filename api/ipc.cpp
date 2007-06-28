@@ -151,7 +151,7 @@ void Interface::require()
 {
 if(!present())
  {
- printf("%zRequired interface '%s' not present. Terminating...%z\n", LIGHTRED, name, LIGHTGRAY);
+// printf("%zRequired interface '%s' not present. Terminating...%z\n", LIGHTRED, name, LIGHTGRAY); FIXME
  die(1);
  }
 }

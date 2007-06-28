@@ -19,7 +19,6 @@
 #include <story.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <stdio.h>
 #include <terminal_driver.h>
 #include <hal.h>
 #include <colors.h>
