@@ -35,16 +35,11 @@ for(i = 0; i < count_pages; i++)
  else
   set_bit(i);  
  }
-safe_printf = false;
 }
 
 void* MemoryManager::alloc(unsigned int count)
 {
 int i;
-#ifdef _DEBUGGING_MM_
-if(safe_printf)
- printf("/mm:+%i/", count);
-#endif
 unsigned int free_count = 0;
 for(i = 0; i < count_pages; i++)
  {
@@ -80,9 +75,6 @@ if(!(page_bitmap[page] & PAGE_ALLOCATED))
 if(!(page_bitmap[page] & ~PAGE_ALLOCATED))
  hal->panic("Attempt to free zero-length memory block: %X\n", address);
 unsigned int i, count = page_bitmap[page] & ~PAGE_ALLOCATED;
-#ifdef _DEBUGGING_MM_
-printf("mm: freeing page %X: count %i\n", page, count);
-#endif
 for(i = page; i < page + count; i++)
  page_bitmap[i] = PAGE_FREE;
 free_pages += count;

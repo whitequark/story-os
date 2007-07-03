@@ -49,11 +49,9 @@ core/include/messages.h
 core/include/msgtype.h
 api/ipc.cpp
 include/version.h
-hal/terminal_driver.cpp
 hal/task.cpp
 hal/handlers.cpp
 hal/boot.S
-hal/include/terminal_driver.h
 core/service.cpp
 core/include/service.h
 apps/app.cpp
@@ -78,3 +76,6 @@ services/include
 services/include/terminal.h
 services/Makefile
 services/terminal.cpp
+services/filesystem.cpp
+services/api_filesystem.cpp
+services/include/filesystem.h

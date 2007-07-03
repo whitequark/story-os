@@ -15,17 +15,41 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <system.h>
+#include <story.h>
 #include <terminal.h>
-#include <stdio.h>
+#include <ipc.h>
+#include <assert.h>
+#include <string.h>
 #include <filesystem.h>
 
 int main()
 {
 Terminal t;
-File f("/");
-if(f.open())
- t.put_string("opened file\n");
-else
- t.put_string("cannot open file\n");
+assert(Interface("fs").add() == 0);
+MessageQuery q;
+while(1)
+ {
+ q.wait();
+ if(q.type() == File::mtResolve)
+  {
+  char path[q.length() + 1];
+  q.data(path);
+  
+  FileID id;
+  id.device_service = 0;
+  id.device_id = 0;
+  id.filesystem_service = 0;
+  id.filesystem_id = 0;
+  
+  t.put_string(path);
+  if(!strcmp(path, "/"))
+   {
+   id.filesystem_service = Interface("fs").task();
+   id.filesystem_id = 1;
+   }
+  Message(&id, sizeof(id)).reply();
+  }
+ else
+  Message(NULL, 0).reply();
+ }
 }

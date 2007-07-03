@@ -3,7 +3,6 @@
 
 #include <multiboot.h>
 #include <kprintf.h>
-#include <terminal_driver.h>
 #include <gdt.h>
 #include <stubs.h>
 #include <idt.h>
@@ -13,6 +12,22 @@
 #include <syscall.h>
 #include <clock.h>
 #include <paging.h>
+
+class KernelTerminal
+{
+private:
+int cursorx;
+int cursory;
+unsigned short *lfb;
+unsigned char color;
+
+public:
+KernelTerminal();
+
+void put_char(char ch);
+void set_color(unsigned char color);
+void clear();
+};
 
 class HAL
 {
@@ -25,7 +40,7 @@ HAL();
 public:
 char* lfb;
 
-TerminalDriver* terminal;
+KernelTerminal* terminal;
 MemoryManager* mm;
 GDT* gdt;
 IDT* idt;

@@ -19,7 +19,6 @@
 #include <story.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <terminal_driver.h>
 #include <hal.h>
 #include <colors.h>
 #include <core.h>
@@ -86,7 +85,7 @@ hal->mm = mm;
 
 init_mallocator(); //malloc, free, etc
 
-hal->terminal = new KernelTerminalDriver;
+hal->terminal = new KernelTerminal;
 hal->terminal->clear();
 
 if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
@@ -225,36 +224,6 @@ while ((hal->inb(PORT + 5) & 1) == 0);
 char ch = hal->inb(PORT);
 //textcolor(YELLOW); putchar(ch);
 return ch;
-}
-
-#endif
-
-#ifndef _ENABLE_SERIAL_TERMINAL
-void putchar(char ch)
-{
-hal->terminal->put_char(ch);
-}
-
-void textcolor(char color)
-{
-hal->terminal->set_color(color);
-}
-
-#else
-
-#ifndef _ENABLE_KERNEL_SERIAL_
-#error Serial terminal needs '_ENABLE_KERNEL_SERIAL_'!
-#endif
-
-void putchar(char c)
-{
-serial_put(c);
-if(c == 0x0A)
- serial_put(0x0D);
-}
-
-void textcolor(char color)
-{
 }
 
 #endif

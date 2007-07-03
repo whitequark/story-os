@@ -9,7 +9,6 @@
 #include <version.h>
 
 //#define _DEBUGGING_VMM_
-//#define _DEBUGGING_MM_
 //#define _DEBUGGING_PAGING_
 //#define _DEBUGGING_TASKSWITCHER_
 //#define _DEBUGGING_EXECUTABLE_LOADER_

@@ -15,13 +15,25 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. 
 
-#include <stdio.h>
 #include <colors.h>
+#include <system.h>
+#include <terminal.h>
 
 extern "C" void __assert_fail (__const char *__assertion, __const char *__file,
                            unsigned int __line, __const char *__function)
 {
-//printf("%zASSERTION FAILED: %s\nFile: '%s' Line: %i\nFunc: '%s'\n", LIGHTRED, __assertion, __file, __line, __function); FIXME
-for(;;);
+Terminal t;
+t.color(LIGHTRED);
+t.put_string("ASSERTION FAILED: ");
+t.put_string(__assertion);
+t.put_string("\nFile: ");
+t.put_string(__file);
+t.put_string(" Line: ");
+t.put_string("FIXME!");
+t.put_string(" Function: ");
+t.put_string(__function);
+t.put_string("\n");
+t.color(LIGHTGRAY);
+die(1);
 }
 

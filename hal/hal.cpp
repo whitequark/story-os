@@ -147,3 +147,55 @@ return NULL;
 HAL::HAL(multiboot_info_t* _mbi): lfb((char*)0xB8000), mbi(*_mbi)
 {
 }
+
+KernelTerminal::KernelTerminal() : lfb((short unsigned*)hal->lfb), cursorx(0), cursory(0)
+{
+color = LIGHTGRAY;
+}
+
+void KernelTerminal::put_char(char ch)
+{
+if(ch == 0)
+ return;
+if(ch != '\n')
+ lfb[(cursorx++) + cursory * 80] = color << 8 | ch;
+else
+ {
+ cursorx = 0;
+ cursory++;
+ }
+if(cursorx == 80)
+ {
+ cursorx = 0;
+ cursory++;
+ }
+if(cursory == 25)
+ {
+ cursory = 24;
+ cursorx = 0;
+ memcpy(lfb, lfb + 80, 24*80*2);
+ memset(lfb + 80*24, 0, 80*2);
+ }
+}
+
+void KernelTerminal::clear()
+{
+int i;
+for(i = 0; i < 80*25; i++)
+ lfb[i] = 0x0700;
+}
+
+void KernelTerminal::set_color(unsigned char color)
+{
+this->color = color;
+}
+
+void putchar(char ch)
+{
+hal->terminal->put_char(ch);
+}
+
+void textcolor(char color)
+{
+hal->terminal->set_color(color);
+}

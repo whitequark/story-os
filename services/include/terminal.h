@@ -10,8 +10,7 @@ public:
 enum { mtPutChar, mtPutString, mtColor };
 
 Terminal();
-void put_char(char c);
-void put_string(char* s);
+void put_string(const char* s);
 void color(char color);
 };
 

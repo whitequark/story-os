@@ -15,17 +15,21 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <system.h>
-#include <terminal.h>
-#include <stdio.h>
 #include <filesystem.h>
+#include <ipc.h>
+#include <string.h>
 
-int main()
+File::File(char* name)
 {
-Terminal t;
-File f("/");
-if(f.open())
- t.put_string("opened file\n");
-else
- t.put_string("cannot open file\n");
+Interface("fs").wait();
+this->name = name;
+}
+
+bool File::open()
+{
+Message(mtResolve, Interface("fs").task(), name, strlen(name)).send();
+Reply().data(&id);
+if(id.filesystem_id == 0)
+ return false;
+else return true;
 }

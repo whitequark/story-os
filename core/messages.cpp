@@ -27,6 +27,8 @@ unsigned int syscall_send(Registers r)
 Task* receiver = hal->taskman->task(r.esi);
 if(!receiver)
  return 1;
+ 
+hal->cli();
 Message* msg = new Message;
 msg->sender = hal->taskman->current->index;
 msg->type = (MessageType) r.ebx;
@@ -58,6 +60,7 @@ if(receiver->reason == rsMessage)
  receiver->reason = rsNone;
 
 hal->taskman->current->reason = rsReply;
+hal->sti();
 asm("ljmp $0x30, $0");
 
 return 0;
@@ -103,6 +106,7 @@ Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
 if(!receiver)
  return 1;
 
+hal->cli();
 Message* msg = new Message;
 msg->sender = hal->taskman->current->index;
 msg->type = hal->taskman->current->message_pointer->type;
@@ -146,7 +150,7 @@ else
 
 if(change_message)
  hal->taskman->current->message = hal->taskman->current->message_pointer;
-
+hal->sti();
 return 0;
 }
 

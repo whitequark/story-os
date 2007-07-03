@@ -209,38 +209,21 @@ for(;;)
  unsigned char scancode;
  while(q.pending())
   {
-  switch(q.type())
+  unsigned int t = q.type();
+  if(t == Terminal::mtPutString)
    {
-   case Terminal::mtPutChar:
-   if(q.length() == 1)
-    {
-    char c;
-    q.data(&c);
-    putchar(c);
-    }
-   break;
-   
-   case Terminal::mtPutString:
-   if(q.length() > 1)
-    {
-    char c[q.length()];
-    q.data(c);
-    puts(c);
-    }
-   else
-    {
-    char c;
-    q.data(&c);
-    putchar(c);
-    }    
-   break;
-   
-   case Terminal::mtColor:
+   char s[q.length()];
+   q.data(s);
+   for(int i = 0; i < q.length(); i++)
+    putchar(s[i]);
+   Message(NULL, 0).reply();
+   }
+  else if(t == Terminal::mtColor)
+   {
    if(q.length() == 1)
     q.data(&color);
-   break;
+   Message(NULL, 0).reply();
    }
-  Message(NULL, 0).reply();
   }
   
  if(inb(0x64) & 1)

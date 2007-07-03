@@ -26,7 +26,7 @@ return str1 - str - 1;
 
 char* strcpy(char* dest, const char* src)
 {
-memcpy(dest, src, strlen(src));
+memcpy(dest, src, strlen(src) + 1);
 return dest;
 }
 
@@ -60,12 +60,12 @@ return ret;
 
 char *strcat(char *dest, const char *src)
 {
-return strncat (dest, src, 0x10000);
+return strncat (dest, src, strlen(src));
 }
 
 int strcmp(const char *s1, const char *s2)
 {
-return strncmp(s1, s2, 0x10000);
+return strncmp(s1, s2, strlen(s1) > strlen(s2) ? strlen(s1) : strlen(s2));
 }
 
 int strncmp(const char *s1, const char *s2, int n)

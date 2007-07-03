@@ -133,7 +133,6 @@ return (unsigned int)directory;
 inline void VirtualMemoryManager::set_bit(unsigned int page)
 {
 page_bitmap[page / 32] |= (1 << page % 32);
-//if(ok) printf("/s:%X/", page);
 }
 
 inline bool VirtualMemoryManager::get_bit(unsigned int page)

@@ -3,3 +3,4 @@ title Story OS
 	kernel /kernel
 	module /terminal
 	module /app
+	module /filesystem
