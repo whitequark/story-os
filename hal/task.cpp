@@ -76,7 +76,7 @@ hal->outb(0x20, 0x20);
 if(!hal->taskman->scheduler_running)
  {
  hal->taskman->scheduler_running = true;
- asm("ljmp $0x30, $0");
+ hal->taskman->schedule();
  }
 }
 
@@ -107,8 +107,6 @@ asm(
 
 bool TaskManager::kill(unsigned int index, unsigned int return_code)
 {
-hal->cli();
-
 Task *t, *r;
 if(index == current->index)
  t = current;
@@ -121,8 +119,6 @@ else
 if(current->pl > t->pl) 
  return false;
 
-if(return_code != 0)
- core->services->process_kill(t);
 core->interfaces->process_kill(t);
 //core->messenger->clear();
 
@@ -131,17 +127,12 @@ for(r = current->next; r != current; r = r->next)
  if(r->reason == rsTaskDie && r->wait_object == index)
   {
   r->reason = rsNone;
-  r->tss->eax = return_code;
+  //TODO see procman.cpp
   }
 
 t->reason = rsDead;
 
 delete t->vmm;
-
-hal->sti();
-if(current->index == index)
- asm("ljmp $0x30, $0"); //switch to some other task if this was suicide
-
 return true;
 }
 
@@ -329,4 +320,9 @@ if(tsk->index == index)
  return tsk;
 else
  return NULL;
+}
+
+void TaskManager::schedule()
+{
+asm("ljmp $0x30, $0");
 }

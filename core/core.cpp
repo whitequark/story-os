@@ -20,6 +20,7 @@
 #include <string.h>
 #include <hal.h>
 #include <messages.h>
+#include <vmm.h>
 
 Core* core;
 
@@ -30,17 +31,10 @@ printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 unsigned int memory_before = hal->mm->free_memory();
 unsigned int memory_after;
 
-//printf("Messenger... ");
-messenger = new Messenger;
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("Interfaces... ");
+messenger = new CoreMessenger;
 interfaces = new InterfaceManager;
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
-//printf("Services... ");
-services = new ServiceManager;
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
+launch_procman();
 
 memory_after = hal->mm->free_memory();
 printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
@@ -56,10 +50,14 @@ if(mbi->mods_count > 0)
  for(mod = (module_t*)mbi->mods_addr; mod->mod_start != NULL; mod++)
   {
   printf("Loading `%s'... ", mod->string);
-  unsigned int index = services->load(mod->mod_start, mod->mod_end - mod->mod_start, (char*) mod->string);
-  Task* t = services->start(index);
+  Task* t = core->load_executable(mod->mod_start, mod->mod_end - mod->mod_start, (char*) mod->string);
   if(t)
+   {
+   t->pl = 1;
+   t->priority = 10;
+   t->tss->eflags |= 0x3000; // IOPL=3
    printf("%zok%z (task %i)\n", LIGHTGREEN, LIGHTGRAY, t->index);
+   }
   else 
    {
    printf("%zFAILED%z\n", LIGHTRED, LIGHTGRAY);
@@ -143,4 +141,10 @@ for(p = pheader; p < pheader + header->e_phnum; p++)
  }
 Task* task = hal->taskman->create_task(3, header->e_entry, 1, vmm);
 return task;
+}
+
+void Core::launch_procman()
+{
+VirtualMemoryManager* vmm = new VirtualMemoryManager(true);
+procman = hal->taskman->create_task(0, (unsigned int) &process_manager, 1, vmm);
 }

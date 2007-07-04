@@ -63,10 +63,17 @@ void wait_for_debugger();
 
 char* option(char* opt_needed);
 
-void outb(unsigned short port, unsigned char value);
-unsigned char inb(unsigned short port);
-void outw(unsigned short port, unsigned short value);
-unsigned short inw(unsigned short port);
+void outb(unsigned short port, unsigned char value)
+{ asm volatile("outb %b0,%w1":: "a"(value), "d"(port)); }
+
+unsigned char inb(unsigned short port)
+{ char value; asm volatile("inb %w1, %b0": "=a"(value): "d"(port)); return value; }
+
+void outw(unsigned short port, unsigned short value)
+{ asm volatile("outw %%ax, %%dx"::"a"(value),"d"(port)); }
+
+unsigned short inw(unsigned short port)
+{ short value; asm volatile("inw %%dx, %%ax":"=a"(value):"d"(port)); return value; }
 
 void cli();
 void sti();

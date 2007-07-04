@@ -26,9 +26,9 @@ int i,j;
 hal->pagedir = (PageDirectory*) hal->mm->alloc(1);
 memset(hal->pagedir, 0, 0x1000); //this will clear 'present' bit in whole directory
 
-unsigned int page_tables = (unsigned int) hal->mm->alloc(0x100);
+unsigned int page_tables = (unsigned int) hal->mm->alloc(32);
 
-for(i = 0; i < 0x100; i++)
+for(i = 0; i < 32; i++)
  {
  PageTable* table = (PageTable*) (page_tables + i * 0x1000);
  hal->pagedir->table[i] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE;

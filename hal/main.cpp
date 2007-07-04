@@ -101,11 +101,8 @@ printf("%zStory OS%z comes with ABSOLUTELY NO WARRANTY; for details type `cat wa
 printf("This is free software, and you are welcome to redistribute it\n");
 printf("under certain conditions; type `cat copying' for details.\n\n");
 
-//printf("System memory amount is %z%d KB%z.\n\n", WHITE, hal->mm->free_memory() / 0x400, LIGHTGRAY);
-
 printf("%zInitializing HAL...%z ", GREEN, LIGHTGRAY);
 
-//printf("GDT... ");
 hal->gdt = new GDT;
 hal->gdt->add_descriptor(new NullDescriptor());
 
@@ -128,52 +125,22 @@ num = hal->gdt->add_descriptor(new SegmentDescriptor(0, 0xFFFFFFFF, false, true,
 hal->app_data = hal->gdt->make_segment(num, 3);
 
 hal->gdt->install();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("IDT... ");
-
 hal->idt = new IDT;
 hal->idt->install();
-
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("Exception handlers... ");
 hal->idt->register_exceptions();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("PIC... ");
 hal->pic = new PIC;
 hal->pic->remap(0x20, 0x28);
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("IRQ handlers... ");
 hal->idt->register_irqs();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("System calls... ");
 hal->syscalls = new SyscallManager();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-//printf("Paging... ");
 hal->paging = new Paging();
-//printf("enabling... ");
 hal->paging->enable();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
-//printf("Task manager... ");
 hal->taskman = new TaskManager();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
-//printf("Clock... ");
 hal->clock = new Clock();
-//printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 
 #ifdef _ENABLE_GDB_STUB_
-printf("Setting up a GDB stub... ");
 set_debug_traps();
-printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
-
-printf("Issuing a breakpoint...\n");
 breakpoint();
 #endif
 
@@ -183,10 +150,9 @@ printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_afte
 core = new Core(multiboot_info);
 
 hal->pic->unmask(0);
-
 hal->sti();
+
 for(;;);
-hal->panic("entry is running!");
 }
 
 #ifdef _ENABLE_KERNEL_SERIAL_

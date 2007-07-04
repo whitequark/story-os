@@ -3,24 +3,24 @@
 
 #include <task.h>
 
-typedef struct SInterface
+struct CoreInterface
 {
 char* name;
 unsigned int task;
-SInterface* next;
-SInterface* prev;
-} Interface;
+CoreInterface* next;
+CoreInterface* prev;
+};
 
 class InterfaceManager
 {
 private:
-Interface* interface;
+CoreInterface* interface;
 
 public:
 InterfaceManager();
 void process_kill(Task* task);
 bool add(char* name);
-Interface* get(char* name);
+CoreInterface* get(char* name);
 };
 
 #endif

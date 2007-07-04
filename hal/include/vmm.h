@@ -3,6 +3,8 @@
 
 #include <paging.h>
 
+#define USER_SPACE_START 0x10000 //in pages
+
 typedef struct SVMemoryBlock
 {
 unsigned int first;
@@ -21,6 +23,7 @@ void reset_bit(unsigned int page);
 
 public:
 VirtualMemoryManager();
+VirtualMemoryManager(bool);
 ~VirtualMemoryManager();
 void* alloc(unsigned int count);
 void free(void* address);

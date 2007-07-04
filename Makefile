@@ -1,5 +1,5 @@
 OBJDIRS=hal libc core
-FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)
+FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o) api/ipc.o
 VERSION=0.48
 
 all:

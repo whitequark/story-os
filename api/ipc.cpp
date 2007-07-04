@@ -24,108 +24,25 @@
 #include <string.h>
 #include <stdlib.h>
 
-Message::Message(unsigned int type, unsigned int receiver, void* data, unsigned int length)
-{
-this->type = (MessageType) type;
-this->receiver = receiver;
-this->data = data;
-this->length = length;
-}
-
-Message::Message(void* data, unsigned int length)
-{
-this->data = data;
-this->length = length;
-}
-
-bool Message::send()
+bool Messenger::send(Message msg)
 {
 bool ret;
-asm("int $0x31":"=a"(ret):"a"(51),"b"(type),"c"(length),"d"(data),"S"(receiver));
+asm("int $0x31":"=a"(ret):"a"(50),"b"(msg.type),"c"(msg.size),"d"(msg.buffer),"S"(msg.task));
 return ret;
 }
 
-bool Message::reply()
+bool Messenger::receive(Message& msg)
 {
 bool ret;
-asm("int $0x31":"=a"(ret):"a"(59),"c"(length),"d"(data));
+asm("int $0x31":"=a"(ret):"a"(52),"b"(&msg));
 return ret;
 }
 
-bool MessageQuery::pending()
+bool Messenger::reply(Message msg)
 {
 bool ret;
-asm("int $0x31":"=a"(ret):"a"(50));
+asm("int $0x31":"=a"(ret):"a"(51),"b"(msg.type),"c"(msg.size),"d"(msg.buffer));
 return ret;
-}
-
-MessageType MessageQuery::type()
-{
-MessageType ret;
-asm("int $0x31":"=a"(ret):"a"(55));
-return ret;
-}
-
-unsigned int MessageQuery::length()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(54));
-return ret;
-}
-
-void MessageQuery::data(void* data)
-{
-asm("int $0x31"::"a"(56),"b"(data));
-}
-
-void MessageQuery::wait()
-{
-asm("int $0x31"::"a"(58));
-}
-
-void* MessageQuery::alloc_data()
-{
-void* ret = morecore(1); //HACK malloc(length());
-data(ret);
-return ret;
-}
-
-unsigned int MessageQuery::sender()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(57));
-return ret;
-}
-
-bool MessageQuery::next()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(52));
-return ret;
-}
-
-unsigned int Reply::length()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(61));
-return ret;
-}
-
-bool Reply::check()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(60));
-return ret;
-}
-
-void Reply::data(void* data)
-{
-asm("int $0x31"::"a"(62),"b"(data));
-}
- 
-void Reply::remove()
-{
-asm("int $0x31"::"a"(63));
 }
 
 Interface::Interface(char* name)
@@ -152,7 +69,7 @@ void Interface::require()
 if(!present())
  {
 // printf("%zRequired interface '%s' not present. Terminating...%z\n", LIGHTRED, name, LIGHTGRAY); FIXME
- die(1);
+// die(1);
  }
 }
 

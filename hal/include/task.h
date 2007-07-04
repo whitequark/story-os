@@ -72,9 +72,8 @@ unsigned int priority;
 
 VirtualMemoryManager* vmm;
 
-Message* message;
-Message* message_pointer;
-Message* reply;
+CoreMessage* message;
+CoreMessage* reply;
 
 WaitingReason reason;
 unsigned int wait_object;
@@ -105,6 +104,7 @@ void scheduler();
 Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm);
 bool scheduler_running;
 Task* task(unsigned int index);
+void schedule();
 };
 
 #endif

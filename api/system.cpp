@@ -17,46 +17,20 @@
 
 #include <system.h>
 #include <stdio.h>
-
-int main();
-void init_mallocator();
+#include <application.h>
 
 extern "C" void _start()
 {
-//init_mallocator();
-die(main());
+Application app;
+app.start();
 }
 
-void* morecore(unsigned int count)
+extern "C" void __gxx_personality_v0()
 {
-void* ret;
-asm("int $0x31":"=a"(ret):"a"(7),"b"(count));
-return ret;
+while(1);
 }
 
-void die(unsigned int return_code)
+extern "C" void __cxa_pure_virtual()
 {
-asm("int $0x31"::"a"(0),"b"(return_code));
-}
-
-void wait_die(unsigned int tid)
-{
-asm("int $0x31"::"a"(2),"b"(tid));
-}
-
-void delay(unsigned int millis)
-{
-asm("int $0x31"::"a"(4),"b"(millis));
-}
-
-void wait_irq(unsigned int irq)
-{
-asm("int $0x31"::"a"(3),"b"(irq));
-}
-
-bool map_pages(unsigned int physical_addr, unsigned int virtual_addr, unsigned int count)
-{
-bool ret;
-asm("int $0x31":"=a"(ret):"a"(8),"b"(physical_addr),"c"(virtual_addr),"d"(count));
-return ret;
+while(1);
 }

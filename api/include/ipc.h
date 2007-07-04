@@ -3,39 +3,22 @@
 
 #include <msgtype.h>
 
-class MessageQuery
+#define PROCMAN_TID 2
+
+struct Message
 {
-public:
-bool pending();
-MessageType type();
-unsigned int length();
-void data(void* data);
-void* alloc_data();
-unsigned int sender();
-void wait();
-bool next();
+unsigned int size;
+void* buffer;
+unsigned int type;
+unsigned int task;
 };
 
-class Message
-{
-MessageType type;
-unsigned int receiver, length;
-void* data;
-
-public:
-Message(unsigned int type, unsigned int receiver, void* data, unsigned int length);
-Message(void* data, unsigned int length);
-bool send();
-bool reply();
-};
-
-class Reply
+class Messenger
 {
 public:
-bool check();
-unsigned int length();
-void data(void* data);
-void remove();
+bool send(Message msg);
+bool receive(Message& msg);
+bool reply(Message msg);
 };
 
 class Interface

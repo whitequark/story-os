@@ -19,24 +19,40 @@
 #include <vmm.h>
 #include <string.h>
 
-bool ok;
-
 VirtualMemoryManager::VirtualMemoryManager()
 {
 int i, j;
 directory = (PageDirectory*) hal->mm->alloc(1);
 memset(directory, 0, 0x1000); //this will clear 'present' bit in whole directory
-memcpy(directory, hal->pagedir, 256);
-ok = false;
-for(i = 0; i < 0x40000; i++)
+memcpy(directory, hal->pagedir, 32);
+for(i = 0; i < USER_SPACE_START; i++)
  set_bit(i);
-ok = true;
+}
+
+VirtualMemoryManager::VirtualMemoryManager(bool) //for process manager
+{
+int i, j;
+directory = (PageDirectory*) hal->mm->alloc(1);
+memset(directory, 0, 0x1000); //this will clear 'present' bit in whole directory
+
+unsigned int page_tables = (unsigned int) hal->mm->alloc(32);
+for(i = 0; i < 32; i++)
+ {
+ PageTable* table = (PageTable*) (page_tables + i * 0x1000);
+ directory->table[i] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+ 
+ for(j = (i == 0 ? 1 : 0); j < 0x400; j++)
+  {
+  unsigned int address = (i * 0x400 + j) << 12;
+  table->page[j] = address | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
+  }
+ }
 }
 
 void* VirtualMemoryManager::alloc(unsigned int count)
 {
 int i;
-for(i = 0x40000; i < 0x100000; i++)
+for(i = USER_SPACE_START; i < 0x100000; i++)
  if(!get_bit(i))
   {
   int j;
@@ -99,16 +115,10 @@ hal->paging->load_cr3(directory);
 
 VirtualMemoryManager::~VirtualMemoryManager()
 {
-hal->paging->load_cr3(hal->pagedir);
 int i;
-for(i = 0x40000; i < 0x100000; i++)
+for(i = USER_SPACE_START; i < 0x100000; i++)
  if(get_bit(i))
-  {
-  #ifdef _DEBUGGING_VMM_
-  printf("vmm: freeing %X = %X\n", i << 12, (page_bitmap[i] & ~PAGE_ALLOCATED) << 12);
-  #endif
   free((void*) (i << 12));
-  }
 hal->mm->free(directory);
 }
 
@@ -119,9 +129,6 @@ for(i = 0; i < count; i++)
  {
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
  set_bit((virt >> 12) + i);
- #ifdef _DEBUGGING_VMM_
- printf("vmm: mapping 0x%X to 0x%X (flags 0x%x)\n", ((virt >> 12) + i) << 12, (phys + (i << 12)), attr);
- #endif
  }
 }
 

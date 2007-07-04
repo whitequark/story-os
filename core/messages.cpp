@@ -29,9 +29,9 @@ if(!receiver)
  return 1;
  
 hal->cli();
-Message* msg = new Message;
+CoreMessage* msg = new CoreMessage;
 msg->sender = hal->taskman->current->index;
-msg->type = (MessageType) r.ebx;
+msg->type = r.ebx;
 msg->length = r.ecx;
 if(r.ecx != 0)
  {
@@ -44,60 +44,23 @@ else
 if(receiver->message != NULL)
  {
  msg->next = receiver->message;
- msg->prev = NULL;
- receiver->message->prev = msg;
- receiver->message = msg->next;
+ receiver->message = msg;
  }
 else
  {
  msg->next = NULL;
- msg->prev = NULL;
  receiver->message = msg;
- receiver->message_pointer = receiver->message;
  }
 
 if(receiver->reason == rsMessage)
  receiver->reason = rsNone;
 
 hal->taskman->current->reason = rsReply;
+
 hal->sti();
-asm("ljmp $0x30, $0");
+hal->taskman->schedule();
 
 return 0;
-}
-
-unsigned int syscall_check(Registers r)
-{
-return hal->taskman->current->message_pointer != NULL;
-}
-
-unsigned int syscall_length(Registers r)
-{
-return hal->taskman->current->message_pointer->length;
-}
-
-unsigned int syscall_type(Registers r)
-{
-return hal->taskman->current->message_pointer->type;
-}
-
-unsigned int syscall_sender(Registers r)
-{
-return hal->taskman->current->message_pointer->sender;
-}
-
-unsigned int syscall_data(Registers r)
-{
-memcpy((void*)r.ebx, hal->taskman->current->message_pointer->data, hal->taskman->current->message_pointer->length);
-}
-
-unsigned int syscall_wait(Registers r)
-{
-if(hal->taskman->current->message_pointer == NULL)
- {
- hal->taskman->current->reason = rsMessage;
- asm("ljmp $0x30, $0");
- }
 }
 
 unsigned int syscall_reply(Registers r)
@@ -107,9 +70,9 @@ if(!receiver)
  return 1;
 
 hal->cli();
-Message* msg = new Message;
+CoreMessage* msg = new CoreMessage;
 msg->sender = hal->taskman->current->index;
-msg->type = hal->taskman->current->message_pointer->type;
+msg->type = r.ebx;
 msg->length = r.ecx;
 if(r.ecx != 0)
  {
@@ -127,93 +90,38 @@ if(receiver->reply != NULL)
  }
 
 receiver->reply = msg;
-assert(receiver->reason == rsReply);
-receiver->reason = rsNone;
+if(receiver->reason == rsReply)
+ receiver->reason = rsNone;
 
-if(hal->taskman->current->message_pointer->next)
- hal->taskman->current->message_pointer->next->prev = hal->taskman->current->message_pointer->prev;
-if(hal->taskman->current->message_pointer->prev)
- hal->taskman->current->message_pointer->prev->next = hal->taskman->current->message_pointer->next;
+CoreMessage* next = hal->taskman->current->message->next;
 
-if(hal->taskman->current->message_pointer->length != 0)
- free(hal->taskman->current->message_pointer->data);
-delete hal->taskman->current->message_pointer;
+if(hal->taskman->current->message->length != 0)
+ free(hal->taskman->current->message->data);
+delete hal->taskman->current->message;
 
-bool change_message = false;
-if(hal->taskman->current->message == hal->taskman->current->message_pointer)
- change_message = true;
-
-if(hal->taskman->current->message_pointer->next == NULL)
- hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->prev;
-else
- hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->next;
-
-if(change_message)
- hal->taskman->current->message = hal->taskman->current->message_pointer;
+hal->taskman->current->message = next;
 hal->sti();
+
 return 0;
 }
 
-unsigned int syscall_reply_check(Registers r)
+unsigned int syscall_receive(Registers r)
 {
-return hal->taskman->current->reply != NULL;
-}
-
-unsigned int syscall_reply_length(Registers r)
-{
-return hal->taskman->current->reply->length;
-}
-
-unsigned int syscall_reply_data(Registers r)
-{
-memcpy((void*) r.ebx, hal->taskman->current->reply->data, hal->taskman->current->reply->length);
-return 0;
-}
-
-unsigned int syscall_reply_remove(Registers r)
-{
-free(hal->taskman->current->reply->data);
-delete hal->taskman->current->reply;
-hal->taskman->current->reply = NULL;
-return 0;
-}
-
-unsigned int syscall_reset(Registers r)
-{
-hal->taskman->current->message_pointer = hal->taskman->current->message;
-return 0;
-}
-
-unsigned int syscall_next(Registers r)
-{
-if(hal->taskman->current->message_pointer == NULL)
- return 0;
-else if(hal->taskman->current->message_pointer->next == NULL)
- {
- hal->taskman->current->message_pointer = hal->taskman->current->message;
+if(hal->taskman->current->message == NULL)
  return 1;
- }
-else
- {
- hal->taskman->current->message_pointer = hal->taskman->current->message_pointer->next;
- return 0;
- }
+Message* msg = (Message*) r.ebx;
+msg->type = hal->taskman->current->message->type;
+msg->task = hal->taskman->current->message->sender;
+unsigned int length = 
+	msg->size < hal->taskman->current->message->length ? msg->size : hal->taskman->current->message->length;
+memcpy(msg->buffer, hal->taskman->current->message->data, length);
+msg->size = hal->taskman->current->message->length;
+return 0;
 }
 
-Messenger::Messenger()
+CoreMessenger::CoreMessenger()
 {
-hal->syscalls->add(50, &syscall_check);
-hal->syscalls->add(51, &syscall_send);
-hal->syscalls->add(52, &syscall_next);
-hal->syscalls->add(53, &syscall_reset);
-hal->syscalls->add(54, &syscall_length);
-hal->syscalls->add(55, &syscall_type);
-hal->syscalls->add(56, &syscall_data);
-hal->syscalls->add(57, &syscall_sender);
-hal->syscalls->add(58, &syscall_wait);
-hal->syscalls->add(59, &syscall_reply);
-hal->syscalls->add(60, &syscall_reply_check);
-hal->syscalls->add(61, &syscall_reply_length);
-hal->syscalls->add(62, &syscall_reply_data);
-hal->syscalls->add(63, &syscall_reply_remove);
+hal->syscalls->add(50, &syscall_send);
+hal->syscalls->add(51, &syscall_reply);
+hal->syscalls->add(52, &syscall_receive);
 }

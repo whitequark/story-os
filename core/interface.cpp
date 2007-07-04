@@ -46,9 +46,9 @@ hal->syscalls->add(101, &syscall_icheck);
 hal->syscalls->add(102, &syscall_igettask);
 }
 
-Interface* InterfaceManager::get(char* name)
+CoreInterface* InterfaceManager::get(char* name)
 {
-Interface* intf;
+CoreInterface* intf;
 for(intf = interface; intf; intf = intf->next)
  if(!strcmp(intf->name, name))
   return intf;
@@ -59,7 +59,7 @@ bool InterfaceManager::add(char* name)
 {
 if(!get(name))
  {
- Interface* intf = new Interface;
+ CoreInterface* intf = new CoreInterface;
  intf->name = strdup(name);
  intf->task = hal->taskman->current->index;
  intf->next = interface;
@@ -83,13 +83,13 @@ else
 
 void InterfaceManager::process_kill(Task* task)
 {
-Interface* intf;
+CoreInterface* intf;
 if(interface != NULL)
  for(intf = interface; intf; intf = intf->next)
   if(intf->task == task->index)
    {
-   Interface* n = intf->next;
-   Interface* p = intf->prev;
+   CoreInterface* n = intf->next;
+   CoreInterface* p = intf->prev;
    free(intf->name);
    delete intf;
    if(interface == intf)

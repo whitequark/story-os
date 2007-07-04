@@ -22,7 +22,7 @@
 extern "C" void __assert_fail (__const char *__assertion, __const char *__file,
                            unsigned int __line, __const char *__function)
 {
-Terminal t;
+/*Terminal t;
 t.color(LIGHTRED);
 t.put_string("ASSERTION FAILED: ");
 t.put_string(__assertion);
@@ -33,7 +33,7 @@ t.put_string("FIXME!");
 t.put_string(" Function: ");
 t.put_string(__function);
 t.put_string("\n");
-t.color(LIGHTGRAY);
-die(1);
+t.color(LIGHTGRAY);*/
+while(1);
 }
 

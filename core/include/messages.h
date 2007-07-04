@@ -2,20 +2,21 @@
 #define _MESSAGES_H_
 
 #include <msgtype.h>
+#include <ipc.h>
 
-typedef struct SMessage
+struct CoreMessage
 {
 unsigned int sender;
-MessageType type;
+unsigned int type;
 void* data;
 unsigned int length;
-SMessage *next, *prev;
-} Message;
+CoreMessage *next;
+};
 
-class Messenger
+class CoreMessenger
 {
 public:
-Messenger();
+CoreMessenger();
 };
 
 #endif

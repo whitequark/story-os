@@ -52,8 +52,6 @@ include/version.h
 hal/task.cpp
 hal/handlers.cpp
 hal/boot.S
-core/service.cpp
-core/include/service.h
 apps/app.cpp
 api
 api/assert.cpp
@@ -79,3 +77,7 @@ services/terminal.cpp
 services/filesystem.cpp
 services/api_filesystem.cpp
 services/include/filesystem.h
+core/procman.cpp
+api/application.cpp
+api/include/application.h
+apps/idle.cpp

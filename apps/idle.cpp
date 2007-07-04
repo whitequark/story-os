@@ -15,27 +15,9 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <ipc.h>
 #include <application.h>
 
 int Application::run()
 {
-Messenger m;
-
-char a = 'a', b = 'b';
-
-Message msg;
-msg.task = PROCMAN_TID;
-
-msg.type = 100;
-msg.size = 1;
-msg.buffer = &a;
-m.send(msg);
-
-delay(1000);
-
-msg.type = 100;
-msg.size = 1;
-msg.buffer = &b;
-m.send(msg);
+while(1);
 }

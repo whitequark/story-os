@@ -33,30 +33,6 @@ vprintf(fmt, vl);
 for(;;);
 }
 
-void HAL::outb(unsigned short port, unsigned char value)
-{
-asm("outb %b0,%w1":: "a"(value), "d"(port));
-}
-
-unsigned char HAL::inb(unsigned short port)
-{
-char value;
-asm("inb %w1, %b0": "=a"(value): "d"(port));
-return value;
-}
-
-void HAL::outw(unsigned short port, unsigned short value)
-{
-asm("outw %%ax, %%dx"::"a"(value),"d"(port));
-}
-
-unsigned short HAL::inw(unsigned short port)
-{
-short value;
-asm("inw %%dx, %%ax":"=a"(value):"d"(port));
-return value;
-}
-
 void HAL::sti_c()
 {
 int_block_count--;

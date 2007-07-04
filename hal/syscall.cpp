@@ -18,87 +18,10 @@
 #include <syscall.h>
 #include <hal.h>
 
-//SYSCALLS
-/*
- EAX	NAME		REGS				REMARKS
-  0	die	ebx = return code
-  1	kill	ebx = tid			return code = 1
-  2	w/die	ebx = tid to wait		AFTER returning from wait eax will be return code of that tid
-  3	w/irq	ebx = irq to wait		need pl = 1, otherwise immediate death
-  4	delay	ebx = milliseconds
-  5	putc	bl  = char to put
-  6	tcolor	bl  = color
-  7	palloc	ebx = page count
-  8	map	ebx = from ecx = to edx = cnt
-*/
-
-unsigned int syscall_die(Registers r)
+unsigned int syscall_schedule(Registers r)
 {
-hal->sti();
-return hal->taskman->kill(hal->taskman->current->index, r.ebx);
+hal->taskman->schedule();
 }
-
-unsigned int syscall_kill(Registers r)
-{
-return hal->taskman->kill(r.ebx, 1);
-}
-
-unsigned int syscall_wait_die(Registers r)
-{
-hal->taskman->current->reason = rsTaskDie;
-hal->taskman->current->wait_object = r.ebx;
-return 0;
-}
-
-unsigned int syscall_wait_irq(Registers r)
-{
-hal->taskman->current->reason = rsIRQ;
-hal->taskman->current->wait_object = r.ebx;
-return 0;
-}
-
-unsigned int syscall_delay(Registers r)
-{
-hal->taskman->current->reason = rsDelay;
-hal->taskman->current->wait_object = hal->clock->ms_to_ticks(r.ebx);
-asm("ljmp $0x30, $0");
-return 0;
-}
-
-unsigned int syscall_putchar(Registers r)
-{
-putchar(r.ebx);
-return 0;
-}
-
-unsigned int syscall_textcolor(Registers r)
-{
-textcolor(r.ebx);
-return 0;
-}
-
-unsigned int syscall_morecore(Registers r)
-{
-unsigned int addr = (unsigned int)hal->taskman->current->vmm->alloc(r.ebx);
-return addr;
-}
-
-unsigned int syscall_map(Registers r)
-{
-if(hal->taskman->current->pl > 1)
- return 1;
-else
- {
- hal->taskman->current->vmm->map(r.ebx, r.ecx, r.edx, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
- return 0;
- }
-}
-
-/*
-unsigned int syscall_(Registers r)
-{
-}
-*/
 
 extern "C" unsigned int syscall_handler(Registers r)
 {
@@ -164,16 +87,8 @@ else
 
 SyscallManager::SyscallManager()
 {
-handlers = new SyscallHandler[0x1000];
+handlers = new SyscallHandler[0x100];
 hal->idt->set_trap(0x31, &syscall, hal->sys_code, 3);
 
-add(0, &syscall_die);
-add(1, &syscall_kill);
-add(2, &syscall_wait_die);
-add(3, &syscall_wait_irq);
-add(4, &syscall_delay);
-add(5, &syscall_putchar);
-add(6, &syscall_textcolor);
-add(7, &syscall_morecore);
-add(8, &syscall_map);
+add(0, &syscall_schedule);
 }

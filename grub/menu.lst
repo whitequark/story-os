@@ -1,6 +1,7 @@
 title Story OS
 	root (cd)
 	kernel /kernel
-	module /terminal
+	module /idle
+##	module /terminal
 	module /app
-	module /filesystem
+##	module /filesystem
