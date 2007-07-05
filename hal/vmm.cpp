@@ -24,9 +24,18 @@ VirtualMemoryManager::VirtualMemoryManager()
 int i, j;
 directory = (PageDirectory*) hal->mm->alloc(1);
 memset(directory, 0, 0x1000); //this will clear 'present' bit in whole directory
-memcpy(directory, hal->pagedir, 32);
-for(i = 0; i < USER_SPACE_START; i++)
- set_bit(i);
+memcpy(directory, hal->pagedir, 32 * 4);
+threads = 1;
+mb = new VMemoryBlock;
+mb->first = 0;
+mb->count = USER_SPACE_START - 1;
+mb->allocated = true;
+mb->reserved = true;
+mb->next = new VMemoryBlock;
+mb->next->first = USER_SPACE_START;
+mb->next->count = 0xFFFFF - USER_SPACE_START;
+mb->next->allocated = false;
+mb->next->next = NULL;
 }
 
 VirtualMemoryManager::VirtualMemoryManager(bool) //for process manager
@@ -47,65 +56,57 @@ for(i = 0; i < 32; i++)
   table->page[j] = address | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
   }
  }
+threads = 1;
 }
 
-void* VirtualMemoryManager::alloc(unsigned int count)
+void* VirtualMemoryManager::alloc(unsigned int count, bool no_merge)
 {
-int i;
-for(i = USER_SPACE_START; i < 0x100000; i++)
- if(!get_bit(i))
+VMemoryBlock *vmb, *nmb; //virtual memory block, next -//-, first -//- (lower)
+for(vmb = mb; vmb != NULL; vmb = vmb->next)
+ if(vmb->count >= count && vmb->allocated == false)
+  break;
+if(vmb == NULL)
+ if(!no_merge)
   {
-  int j;
-  bool ok = true;
-  for(j = i+1; j < i + count; j++)
-   if(get_bit(i))
-    {
-    ok = false;
-    break;
-    }
-  if(!ok)
-   continue;
-  #ifdef _DEBUGGING_VMM_
-  printf("vmm: found free block at %X length %i\n", i,  count);
-  #endif
-  unsigned int phys = (unsigned int) hal->mm->alloc(count);
-  if(!phys)
-   return NULL;
-  set_bit(i);
-  hal->paging->set_pte(directory, i, phys | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
-  for(j = i+1; j < i+count; j++)
-   {
-   set_bit(j);
-   hal->paging->set_pte(directory, j, (phys + (j << 12)) | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
-   }
-  return (void*) (i << 12);
+  merge();
+  return alloc(count, true);
   }
-return NULL;
+ else return NULL;
+
+void* phys = hal->mm->alloc(count);
+if(phys == NULL)
+ return NULL;
+
+nmb = vmb->next;
+vmb->allocated = true;
+vmb->physical = phys;
+if(vmb->count != count)
+ {
+ VMemoryBlock* fmb = new VMemoryBlock;
+ fmb->count = vmb->count - count;
+ fmb->first = vmb->first + count;
+ fmb->next = nmb;
+ vmb->count = count;
+ vmb->next = fmb; //insert free fmb in the middle of vmb and nmb
+ }
+map((unsigned int) phys, vmb->first << 12, count, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);
+return (void*) (vmb->first << 12);
 }
 
 void VirtualMemoryManager::free(void* address)
 {
-return;
-hal->panic("VFREE called!");
-if(address == NULL)
+unsigned int page = ((unsigned int) address) >> 12;
+VMemoryBlock *vmb; //virtual memory block
+for(vmb = mb; vmb != NULL; vmb = vmb->next)
+ if(vmb->first == page)
+  break;
+if(vmb == NULL)
  return;
-/*unsigned int page = ((unsigned int) address) >> 12;
-if(((unsigned int) address) & 0xFFF)
- hal->panic("Attempt to free non-aligned address %X\n", address);
-if(!(page_bitmap[page] & PAGE_ALLOCATED))
- hal->panic("Attempt to free unallocated memory page: %X\n", address);
-if(!(page_bitmap[page] & ~PAGE_ALLOCATED))
- hal->panic("Attempt to free zero-length memory block: %X\n", address);
-page_bitmap[page] = PAGE_ALLOCATED;
-int i;
-for(i = page; ; i++)
- if(page_bitmap[i] == PAGE_ALLOCATED)
-  {
-  hal->paging->set_pte(directory, i, 0); //unmap
-  page_bitmap[i] = PAGE_FREE;
-  }
- else
-  break;*/
+if(vmb->physical == NULL || vmb->allocated == false || vmb->reserved == true)
+ return;
+hal->mm->free(vmb->physical);
+vmb->allocated = false;
+vmb->physical = NULL;
 }
 
 void VirtualMemoryManager::load()
@@ -116,20 +117,52 @@ hal->paging->load_cr3(directory);
 VirtualMemoryManager::~VirtualMemoryManager()
 {
 int i;
-for(i = USER_SPACE_START; i < 0x100000; i++)
- if(get_bit(i))
-  free((void*) (i << 12));
+for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = vmb->next)
+ free((void*) (vmb->first << 12));
+VMemoryBlock* nmb;
+for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = nmb)
+ {
+ nmb = vmb->next;
+ delete vmb;
+ }
+for(int i = 33; i < 0x400; i++)
+ if(directory->table[i])
+  hal->mm->free((void*) directory->table[i]);
 hal->mm->free(directory);
 }
 
 void VirtualMemoryManager::map(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr)
 {
-unsigned int i;
-for(i = 0; i < count; i++)
- {
+for(unsigned int i = 0; i < count; i++)
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
- set_bit((virt >> 12) + i);
+}
+
+void VirtualMemoryManager::alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved)
+{
+unsigned int pvirt = virt >> 12; //paged virtual
+VMemoryBlock *vmb = NULL, *amb, *aamb, *nmb;//virtual memory block, allocated -//-, after allocated -//-, next -//-
+for(VMemoryBlock* cmb = mb; cmb != NULL; cmb = cmb->next)
+ if((cmb->first <= pvirt) && (cmb->first + cmb->count >= pvirt + count) && (cmb->allocated == false))
+  vmb = cmb;
+if(vmb == NULL)
+ hal->panic("VMM::alloc_at: cannot find memory block fully including allocated block");
+nmb = vmb->next;
+if(vmb->first != pvirt)
+ hal->panic("VMM::alloc_at: vmb->first != pvirt currently not supported");
+else
+ {
+ amb = vmb;
+ aamb = new VMemoryBlock;
+ aamb->first = vmb->first + count;
+ aamb->count = vmb->count - count;
+ aamb->next = nmb;
  }
+amb->physical = (void*) phys;
+amb->allocated = 1;
+amb->reserved = reserved;
+amb->count = count;
+amb->next = aamb;
+map(phys, virt, count, attr);
 }
 
 unsigned int VirtualMemoryManager::get_directory()
@@ -137,17 +170,31 @@ unsigned int VirtualMemoryManager::get_directory()
 return (unsigned int)directory;
 }
 
-inline void VirtualMemoryManager::set_bit(unsigned int page)
+int VirtualMemoryManager::change_threads(int delta)
 {
-page_bitmap[page / 32] |= (1 << page % 32);
+return (threads += delta);
 }
 
-inline bool VirtualMemoryManager::get_bit(unsigned int page)
+void VirtualMemoryManager::show()
 {
-return (page_bitmap[page / 32] & (1 << page % 32)) != 0;
+VMemoryBlock *vmb;
+for(vmb = mb; vmb != NULL; vmb = vmb->next)
+ printf("block at 0x%X: <-> 0x%X, all: %i, res: %i, physical 0x%X\n", vmb->first << 12, vmb->count << 12, vmb->allocated, vmb->reserved, vmb->physical);
 }
 
-inline void VirtualMemoryManager::reset_bit(unsigned int page)
+void VirtualMemoryManager::merge()
 {
-page_bitmap[page / 32] &= ~(1 << page % 32);
+bool no_advance = false;
+for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = no_advance ? vmb : vmb->next)
+ if(!vmb->allocated && !vmb->next->allocated)
+  {
+  VMemoryBlock* nnmb = vmb->next->next;
+  vmb->count += vmb->next->count;
+  delete vmb->next;
+  vmb->next = nnmb;
+  if(!vmb->next || vmb->next->allocated)
+   no_advance = false;
+  else
+   no_advance = true;
+  }
 }

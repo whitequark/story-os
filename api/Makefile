@@ -1,4 +1,4 @@
 include ../template.mk
-OBJECTS=assert.o system.o stubs.o ipc.o application.o
+OBJECTS=assert.o system.o stubs.o ipc.o procman.o mutex.o
 
 all: $(OBJECTS)

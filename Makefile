@@ -1,4 +1,5 @@
-OBJDIRS=hal libc core
+#ipc.o for procman
+OBJDIRS=hal lib core
 FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o) api/ipc.o
 VERSION=0.48
 
@@ -6,12 +7,12 @@ all:
 	@echo "WARNING: If it does not compile, check path in template.mk!"
 	@make -C hal
 	@make -C core
-	@make -C libc
+	@make -C lib
 	@make -C api
 	@make -C services
 	@make -C apps
 	@echo "Linking kernel"
-	@ld -e start -Ttext 0x200000 $(FILES) -o output/kernel --oformat elf32-i386
+	@ld -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386
 	
 	@expr `cat .build` + 1 > .build
 	@echo "/* include/version.h" > include/version.h
@@ -28,7 +29,7 @@ all:
 	@cp COPYING disk/
 	
 	@echo "Building ISO image"
-	@mkisofs -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Peter Zotov <peterzotov@yandex.ru>" -o disk.iso disk
+	@mkisofs -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Peter Zotov <admin@story.osdev.ru>" -o disk.iso disk
 	
 clean:
 	@find ./ -name "*.o" -exec rm {} \;

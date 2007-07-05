@@ -98,13 +98,13 @@ public:
 Task* current;
 TaskManager();
 bool kill(unsigned int index, unsigned int return_code = 1); // 0=OK 1=GenericError 2-x=User accessible
-void status();
 void process_irq(unsigned int number);
 void scheduler();
 Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm);
 bool scheduler_running;
 Task* task(unsigned int index);
 void schedule();
+void status();
 };
 
 #endif

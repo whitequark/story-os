@@ -129,6 +129,9 @@ KernelTerminal::KernelTerminal() : lfb((short unsigned*)hal->lfb), cursorx(0), c
 color = LIGHTGRAY;
 }
 
+#define VGA_CRT_IC      0x3D4
+#define VGA_CRT_DC      0x3D5
+
 void KernelTerminal::put_char(char ch)
 {
 if(ch == 0)
@@ -152,6 +155,12 @@ if(cursory == 25)
  memcpy(lfb, lfb + 80, 24*80*2);
  memset(lfb + 80*24, 0, 80*2);
  }
+unsigned short offset = cursorx + cursory * 80;
+hal->outb(VGA_CRT_IC, 0x0f);
+hal->outb(VGA_CRT_DC, offset & 0xff);
+offset >>= 8;
+hal->outb(VGA_CRT_IC, 0x0e);
+hal->outb(VGA_CRT_DC, offset & 0xff);
 }
 
 void KernelTerminal::clear()

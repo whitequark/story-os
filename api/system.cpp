@@ -16,13 +16,23 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <system.h>
-#include <stdio.h>
-#include <application.h>
+#include <procman.h>
+#include <ipc.h>
+
+void init_mallocator();
+int main();
 
 extern "C" void _start()
 {
-Application app;
-app.start();
+init_mallocator();
+Procman p;
+p.die(main());
+}
+
+void* morecore(unsigned int count)
+{
+Procman p;
+return p.alloc_pages(count);
 }
 
 extern "C" void __gxx_personality_v0()

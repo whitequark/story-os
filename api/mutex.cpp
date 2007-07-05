@@ -15,21 +15,33 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <terminal.h>
-#include <string.h>
-#include <ipc.h>
+#include <mutex.h>
 
-Terminal::Terminal()
+Mutex::Mutex()
 {
-Interface("terminal").wait();
+locker = 0;
 }
 
-void Terminal::color(char c)
+bool Mutex::lock()
 {
-Message(Terminal::mtColor, Interface("terminal").task(), (void*) &c, 1).send();
+unsigned int previous;
+do
+ {
+ previous = xchg(&locker, 1);
+ } while(previous != 0);
 }
 
-void Terminal::put_string(const char* s)
+bool Mutex::try_lock()
 {
-Message(Terminal::mtPutString, Interface("terminal").task(), (void*) s, strlen(s)).send();
+return xchg(&locker, 1) == 0;
+}
+
+bool Mutex::is_locked()
+{
+return locker;
+}
+
+bool Mutex::unlock()
+{
+return xchg(&locker, 0) == 0;
 }

@@ -21,6 +21,7 @@
 unsigned int syscall_schedule(Registers r)
 {
 hal->taskman->schedule();
+return 0;
 }
 
 extern "C" unsigned int syscall_handler(Registers r)

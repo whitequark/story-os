@@ -27,21 +27,19 @@ void TaskManager::scheduler()
 while(1)
  {
  Task* t;
- if(hal->taskman->ticks_remaining <= 0)
+ if(ticks_remaining <= 0)
   {
-  hal->taskman->ticks_remaining = hal->taskman->current->priority;
-  unsigned int oldi = hal->taskman->current->index;
-  do {  hal->taskman->current = hal->taskman->current->next; }
-  while(hal->taskman->current->reason != rsNone || hal->taskman->current->priority == 0);
-  unsigned int newi = hal->taskman->current->index;
-  #ifdef _DEBUGGING_TASKSWITCHER_
-  printf("%z%i>%i%z", YELLOW, oldi, newi, LIGHTGRAY);
-  #endif
-  hal->taskman->scheduler_running = false;
-  hal->taskman->run_task(hal->taskman->current);
+  ticks_remaining = current->priority;
+  unsigned int oldi = current->index;
+  do { current = current->next; }
+  while(current->reason != rsNone || current->priority == 0);
+  unsigned int newi = current->index;
+ // printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
+  scheduler_running = false;
+  run_task(current);
   }
  else
-  hal->taskman->ticks_remaining--;
+  ticks_remaining--;
  }
 }
 
@@ -55,8 +53,8 @@ extern "C" void timer_handler()
 static int d;
 const int p = 300;
 char c[4] = { '\\', '|', '/', '-' };
-asm("movb %0, 0xB8000+80*2-1"::"a"(WHITE));
-asm("movb %0, 0xB8000+80*2-2"::"a"(c[(d++)/p]));
+asm("movb %%al, 0xB8000+80*2-1"::"a"(WHITE));
+asm("movb %%al, 0xB8000+80*2-2"::"a"(c[(d++)/p]));
 if(d == p*4) d = 0;
 
 hal->clock->tick();
@@ -111,29 +109,95 @@ Task *t, *r;
 if(index == current->index)
  t = current;
 else
- {
  for(t = current->next; t->index != index && t != current; t = t->next); //find task with our index
- if(t == current)
-  return false;
- }
 if(current->pl > t->pl) 
  return false;
 
-core->interfaces->process_kill(t);
 //core->messenger->clear();
 
-//find and continue all waiting tasks
-for(r = current->next; r != current; r = r->next)
+//find and continue all waiting tasks TODO
+/*for(r = current->next; r != current; r = r->next)
  if(r->reason == rsTaskDie && r->wait_object == index)
   {
   r->reason = rsNone;
-  //TODO see procman.cpp
-  }
+  r->reply->length = 4;
+  r->reply->data = malloc(4);
+  unsigned int* n = (unsigned int*) r->reply->data;
+  *n = return_code;
+  }*/
 
 t->reason = rsDead;
 
-delete t->vmm;
+if(t->vmm->change_threads(-1) == 0)
+ delete t->vmm;
+
 return true;
+}
+
+void TaskManager::process_irq(unsigned int number)
+{
+Task* t;
+int n;
+for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
+ if(t->reason == rsIRQ && t->wait_object == number)
+  t->reason = rsNone;
+}
+
+Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm)
+{
+Task* task = new Task;
+task->index = next_index++;
+task->pl = pl;
+task->priority = priority;
+task->vmm = vmm;
+task->next = current->next;
+current->next = task;
+
+unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);
+stack_pl0 += PL0_STACK_SIZE * 0x1000 - 1;
+
+task->tss = new TSS;
+
+task->tss->cr3 = task->vmm->get_directory();
+task->tss->eip = entry;
+task->tss->trace = 0;
+
+task->tss->eflags = 0x202;
+task->tss->eax = 0;
+task->tss->ebx = 0;
+task->tss->ecx = 0;
+task->tss->edx = 0;
+task->tss->esi = 0;
+task->tss->edi = 0;
+
+unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE);
+stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 1;
+
+/*unsigned int stack_pl3 = (unsigned int) hal->mm->alloc(PL3_STACK_SIZE);
+task->vmm->map(stack_pl3, 0xE0000000, PL3_STACK_SIZE, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);
+stack_pl3 = 0xE0000000 + PL3_STACK_SIZE * 0x1000 - 1;*/
+
+task->tss->esp0 = stack_pl0;
+task->tss->esp = stack_pl3;
+task->tss->ebp = stack_pl3;
+
+task->tss->cs = hal->app_code;
+task->tss->es = hal->app_data;
+task->tss->ss = hal->app_data;
+task->tss->ds = hal->app_data;
+task->tss->ss0 = hal->sys_data;
+
+task->tss->fs = 0;
+task->tss->gs = 0;
+task->tss->ldt = 0;
+task->tss->iomap = 0;
+
+task->message = NULL;
+task->reply = NULL;
+
+task->descriptor = new TSSDescriptor((unsigned int)task->tss);
+
+return task;
 }
 
 void TaskManager::status()
@@ -157,76 +221,22 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
   case rsIRQ:
   printf(", waiting IRQ%i to appear", t->wait_object);
   break;
+  
+  case rsDelay:
+  printf(", waiting %i milliseconds", t->wait_object);
+  break;
+  
+  case rsMessage:
+  printf(", waiting for message");
+  break;
+  
+  case rsReply:
+  printf(", waiting for reply");
+  break;
   }
  printf(", priority = %i", t->priority);
  printf("\n");
  }
-}
-
-void TaskManager::process_irq(unsigned int number)
-{
-Task* t;
-int n;
-for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
- if(t->reason == rsIRQ && t->wait_object == number)
-  t->reason = rsNone;
-}
-
-Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm)
-{
-hal->cli_c();
-
-Task* task = new Task;
-task->index = next_index++;
-task->pl = pl;
-task->priority = priority;
-task->vmm = vmm;
-task->next = current->next;
-current->next = task;
-current = task;
-
-unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);
-stack_pl0 += PL0_STACK_SIZE * 0x1000 - 1;
-
-task->tss = new TSS;
-
-task->tss->cr3 = task->vmm->get_directory();
-task->tss->eip = entry;
-task->tss->trace = 0;
-
-task->tss->eflags = 0x202;
-task->tss->eax = 0;
-task->tss->ebx = 0;
-task->tss->ecx = 0;
-task->tss->edx = 0;
-task->tss->esi = 0;
-task->tss->edi = 0;
-
-unsigned int stack_pl3 = (unsigned int) hal->mm->alloc(PL3_STACK_SIZE);
-task->vmm->map(stack_pl3, 0xE0000000, PL3_STACK_SIZE, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
-stack_pl3 = 0xE0000000 + PL3_STACK_SIZE * 0x1000 - 1;
-
-task->tss->esp0 = stack_pl0;
-task->tss->esp = stack_pl3;
-task->tss->ebp = stack_pl3;
-
-task->tss->cs = hal->app_code;
-task->tss->es = hal->app_data;
-task->tss->ss = hal->app_data;
-task->tss->ds = hal->app_data;
-task->tss->ss0 = hal->sys_data;
-
-task->tss->fs = 0;
-task->tss->gs = 0;
-task->tss->ldt = 0;
-task->tss->iomap = 0;
-
-task->message = NULL;
-
-task->descriptor = new TSSDescriptor((unsigned int)task->tss);
-
-hal->sti_c();
-return task;
 }
 
 TaskManager::TaskManager()

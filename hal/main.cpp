@@ -66,6 +66,9 @@ extern "C" void set_debug_traps();
 extern "C" void breakpoint();
 #endif
 
+bool mm_initialized;
+char page[0x1000];
+
 extern "C" void entry(unsigned long magic, multiboot_info_t* multiboot_info)
 {
 unsigned int mm_position = 0x00400000;
@@ -76,14 +79,14 @@ if(multiboot_info->mods_count != 0)
   mm_position = mod->mod_end + 0x1000;
  }
 
-MemoryManager* mm = new (mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024);
+MemoryManager* mm = new (mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024 + 0x100000);
 
-hal = new (mm->alloc(1)) HAL(multiboot_info);
-hal->cli();
+mm_initialized = false; //because malloc uses morecore that uses mm->alloc that uses new() that uses malloc :)
+init_mallocator();      //see morecore lower
+mm_initialized = true;
 
+hal = new HAL(multiboot_info);
 hal->mm = mm;
-
-init_mallocator(); //malloc, free, etc
 
 hal->terminal = new KernelTerminal;
 hal->terminal->clear();
@@ -99,7 +102,8 @@ printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
 printf("%zStory OS%z comes with ABSOLUTELY NO WARRANTY; for details type `cat warranty'\n", LIGHTBLUE, LIGHTGRAY);
 printf("This is free software, and you are welcome to redistribute it\n");
-printf("under certain conditions; type `cat copying' for details.\n\n");
+printf("under certain conditions; type `cat copying' for details.\n");
+printf("Thanks to: Legos, DinamytE, SadKo.\n\n");
 
 printf("%zInitializing HAL...%z ", GREEN, LIGHTGRAY);
 
@@ -125,13 +129,17 @@ num = hal->gdt->add_descriptor(new SegmentDescriptor(0, 0xFFFFFFFF, false, true,
 hal->app_data = hal->gdt->make_segment(num, 3);
 
 hal->gdt->install();
+
 hal->idt = new IDT;
 hal->idt->install();
 hal->idt->register_exceptions();
+hal->idt->register_irqs();
+
 hal->pic = new PIC;
 hal->pic->remap(0x20, 0x28);
-hal->idt->register_irqs();
+
 hal->syscalls = new SyscallManager();
+
 hal->paging = new Paging();
 hal->paging->enable();
 
@@ -225,3 +233,10 @@ va_end(args);
 }
 
 #endif
+
+void* morecore(unsigned int count)
+{
+if(!mm_initialized)
+ return page;
+return hal->mm->alloc(count);
+}

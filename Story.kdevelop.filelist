@@ -1,12 +1,5 @@
 # KDevelop Custom Project File List
 Makefile
-libc/Makefile
-libc/malloc.cpp
-libc/memory.cpp
-libc/string.cpp
-libc/include/stdarg.h
-libc/include/stdlib.h
-libc/include/string.h
 include/story.h
 hal/hal.cpp
 hal/main.cpp
@@ -40,8 +33,6 @@ core/core.cpp
 core/include/core.h
 api/include/system.h
 api/system.cpp
-core/interface.cpp
-core/include/interface.h
 api/include/ipc.h
 api/stubs.cpp
 core/messages.cpp
@@ -69,15 +60,16 @@ hal/include
 hal/include/kprintf.h
 hal/kprintf.cpp
 services
-services/api_terminal.cpp
 services/include
 services/include/terminal.h
 services/Makefile
-services/terminal.cpp
 services/filesystem.cpp
 services/api_filesystem.cpp
 services/include/filesystem.h
 core/procman.cpp
-api/application.cpp
-api/include/application.h
 apps/idle.cpp
+api/include/mutex.h
+api/mutex.cpp
+lib
+lib/include
+lib/include/list.h

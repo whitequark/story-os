@@ -26,7 +26,7 @@ unsigned int syscall_send(Registers r)
 {
 Task* receiver = hal->taskman->task(r.esi);
 if(!receiver)
- return 1;
+ return false;
  
 hal->cli();
 CoreMessage* msg = new CoreMessage;
@@ -60,14 +60,14 @@ hal->taskman->current->reason = rsReply;
 hal->sti();
 hal->taskman->schedule();
 
-return 0;
+return true;
 }
 
 unsigned int syscall_reply(Registers r)
 {
 Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
 if(!receiver)
- return 1;
+ return false;
 
 hal->cli();
 CoreMessage* msg = new CoreMessage;
@@ -102,13 +102,13 @@ delete hal->taskman->current->message;
 hal->taskman->current->message = next;
 hal->sti();
 
-return 0;
+return true;
 }
 
 unsigned int syscall_receive(Registers r)
 {
 if(hal->taskman->current->message == NULL)
- return 1;
+ return false;
 Message* msg = (Message*) r.ebx;
 msg->type = hal->taskman->current->message->type;
 msg->task = hal->taskman->current->message->sender;
@@ -116,7 +116,21 @@ unsigned int length =
 	msg->size < hal->taskman->current->message->length ? msg->size : hal->taskman->current->message->length;
 memcpy(msg->buffer, hal->taskman->current->message->data, length);
 msg->size = hal->taskman->current->message->length;
-return 0;
+return true;
+}
+
+unsigned int syscall_receive_reply(Registers r)
+{
+if(hal->taskman->current->reply == NULL)
+ return false;
+Message* msg = (Message*) r.ebx;
+msg->type = hal->taskman->current->reply->type;
+msg->task = hal->taskman->current->reply->sender;
+unsigned int length = 
+	msg->size < hal->taskman->current->reply->length ? msg->size : hal->taskman->current->reply->length;
+memcpy(msg->buffer, hal->taskman->current->reply->data, length);
+msg->size = hal->taskman->current->reply->length;
+return true;
 }
 
 CoreMessenger::CoreMessenger()
@@ -124,4 +138,5 @@ CoreMessenger::CoreMessenger()
 hal->syscalls->add(50, &syscall_send);
 hal->syscalls->add(51, &syscall_reply);
 hal->syscalls->add(52, &syscall_receive);
+hal->syscalls->add(53, &syscall_receive_reply);
 }

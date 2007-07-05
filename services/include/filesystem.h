@@ -1,9 +1,25 @@
 #ifndef _FILESYSTEM_H_
 #define _FILESYSTEM_H_
 
-#include <msgtype.h>
+#include <list.h>
 
-struct FileID
+class FilesystemObject
+{
+public:
+char* name;
+};
+
+class Filesystem
+{
+private:
+List<FilesystemObject*> files;
+
+public:
+enum { mtRegister, mtResolve };
+Filesystem();
+};
+
+/*struct FileID
 {
 unsigned int filesystem_service;
 unsigned int filesystem_id;
@@ -22,6 +38,6 @@ public:
 enum { mtResolve };
 File(char* name);
 bool open();
-};
+};*/
 
 #endif

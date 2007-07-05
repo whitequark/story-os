@@ -45,42 +45,9 @@ asm("int $0x31":"=a"(ret):"a"(51),"b"(msg.type),"c"(msg.size),"d"(msg.buffer));
 return ret;
 }
 
-Interface::Interface(char* name)
+bool Messenger::receive_reply(Message& msg)
 {
-this->name = name;
-}
-
-bool Interface::add()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(100),"b"(name));
-return ret;
-}
-
-bool Interface::present()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(101),"b"(name));
-return ret;
-}
-
-void Interface::require()
-{
-if(!present())
- {
-// printf("%zRequired interface '%s' not present. Terminating...%z\n", LIGHTRED, name, LIGHTGRAY); FIXME
-// die(1);
- }
-}
-
-void Interface::wait()
-{
-while(!present());
-}
-
-unsigned int Interface::task()
-{
-unsigned int ret;
-asm("int $0x31":"=a"(ret):"a"(102),"b"(name));
+bool ret;
+asm("int $0x31":"=a"(ret):"a"(53),"b"(&msg));
 return ret;
 }

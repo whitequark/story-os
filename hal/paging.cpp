@@ -64,7 +64,7 @@ if(table == NULL)
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
-asm("invlpg (%0)"::"r" (page): "memory");
+//asm("invlpg (%0)"::"r" (page): "memory"); FIXME
 table->page[page & 0x3F] = value;
 }
 

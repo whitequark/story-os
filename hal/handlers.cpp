@@ -44,7 +44,7 @@ char* exception_names[20] = {
 "Unknown Exception"
 };
 
-void common_exception_handler(int number, int address, int errcode)
+void common_exception_handler(int number, int address, int errcode, HRegisters r)
 {
 hal->cli();
 unsigned int cr2;
@@ -63,42 +63,43 @@ if(number == 0x0E)
  else			printf("%zpage not found%z", YELLOW, LIGHTGRAY);
  if(errcode & 4)	printf(" at level %z3%z, ", LIGHTBLUE, LIGHTGRAY);
  else			printf(" at level %z0%z, ", LIGHTBLUE, LIGHTGRAY);
- printf("address %z%X%z", LIGHTGREEN, cr2, LIGHTGRAY);
+ printf("address %z%X%z\n", LIGHTGREEN, cr2, LIGHTGRAY);
  }
 if(hal->taskman->current->index == 0)
  {
- printf("\n            %zSystem halted.\n", LIGHTRED);
- hal->cli();
+ printf("            %zSystem halted.\n", LIGHTRED);
  for(;;);
  }
 else
  {
- printf("\n            %zTask terminated.%z\n", LIGHTRED, LIGHTGRAY);
- hal->sti();
+ printf("            %zTask will be terminated.%z\n", LIGHTRED, LIGHTGRAY);
+ int index = hal->taskman->current->index;
  hal->taskman->kill(hal->taskman->current->index, 1);
+ hal->sti();
+ while(1);
  }
 }
 
-EXCEPTION_HANDLER(exception0) { common_exception_handler(0, address, errcode); }
-EXCEPTION_HANDLER(exception1) { common_exception_handler(1, address, errcode); }
-EXCEPTION_HANDLER(exception2) { common_exception_handler(2, address, errcode); }
-EXCEPTION_HANDLER(exception3) { common_exception_handler(3, address, errcode); }
-EXCEPTION_HANDLER(exception4) { common_exception_handler(4, address, errcode); }
-EXCEPTION_HANDLER(exception5) { common_exception_handler(5, address, errcode); }
-EXCEPTION_HANDLER(exception6) { common_exception_handler(6, address, errcode); }
-EXCEPTION_HANDLER(exception7) { common_exception_handler(7, address, errcode); }
-EXCEPTION_HANDLER(exception8) { common_exception_handler(8, address, errcode); }
-EXCEPTION_HANDLER(exception9) { common_exception_handler(9, address, errcode); }
-EXCEPTION_HANDLER(exceptionA) { common_exception_handler(10, address, errcode); }
-EXCEPTION_HANDLER(exceptionB) { common_exception_handler(11, address, errcode); }
-EXCEPTION_HANDLER(exceptionC) { common_exception_handler(12, address, errcode); }
-EXCEPTION_HANDLER(exceptionD) { common_exception_handler(13, address, errcode); }
-EXCEPTION_HANDLER(exceptionE) { common_exception_handler(14, address, errcode); }
-EXCEPTION_HANDLER(exceptionF) { common_exception_handler(15, address, errcode); }
-EXCEPTION_HANDLER(exception10) { common_exception_handler(16, address, errcode); }
-EXCEPTION_HANDLER(exception11) { common_exception_handler(17, address, errcode); }
-EXCEPTION_HANDLER(exception12) { common_exception_handler(18, address, errcode); }
-EXCEPTION_HANDLER(exception_unknown) { common_exception_handler(19, address, errcode); }
+EXCEPTION_HANDLER(exception0) { common_exception_handler(0, address, errcode, r); }
+EXCEPTION_HANDLER(exception1) { common_exception_handler(1, address, errcode, r); }
+EXCEPTION_HANDLER(exception2) { common_exception_handler(2, address, errcode, r); }
+EXCEPTION_HANDLER(exception3) { common_exception_handler(3, address, errcode, r); }
+EXCEPTION_HANDLER(exception4) { common_exception_handler(4, address, errcode, r); }
+EXCEPTION_HANDLER(exception5) { common_exception_handler(5, address, errcode, r); }
+EXCEPTION_HANDLER(exception6) { common_exception_handler(6, address, errcode, r); }
+EXCEPTION_HANDLER(exception7) { common_exception_handler(7, address, errcode, r); }
+EXCEPTION_HANDLER(exception8) { common_exception_handler(8, address, errcode, r); }
+EXCEPTION_HANDLER(exception9) { common_exception_handler(9, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionA) { common_exception_handler(10, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionB) { common_exception_handler(11, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionC) { common_exception_handler(12, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionD) { common_exception_handler(13, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionE) { common_exception_handler(14, address, errcode, r); }
+EXCEPTION_HANDLER(exceptionF) { common_exception_handler(15, address, errcode, r); }
+EXCEPTION_HANDLER(exception10) { common_exception_handler(16, address, errcode, r); }
+EXCEPTION_HANDLER(exception11) { common_exception_handler(17, address, errcode, r); }
+EXCEPTION_HANDLER(exception12) { common_exception_handler(18, address, errcode, r); }
+EXCEPTION_HANDLER(exception_unknown) { common_exception_handler(19, address, errcode, r); }
 
 IRQ_HANDLER(irq0_handler)      { hal->taskman->process_irq(0);  }
 IRQ_HANDLER(irq1_handler)      { hal->taskman->process_irq(1);  }

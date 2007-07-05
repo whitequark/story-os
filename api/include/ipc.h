@@ -19,21 +19,7 @@ public:
 bool send(Message msg);
 bool receive(Message& msg);
 bool reply(Message msg);
-};
-
-class Interface
-{
-private:
-Interface();
-char* name;
-
-public:
-Interface(char* name);
-bool add();
-bool present();
-void require();
-void wait();
-unsigned int task();
+bool receive_reply(Message& msg);
 };
 
 #endif

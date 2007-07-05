@@ -43,7 +43,7 @@ TSSDescriptor(unsigned int base);
 class GDT
 {
 private:
-char gdt[8192 * 8]; //there are enough descriptors!!
+char gdt[1024 * 8]; //there are enough descriptors!!
 int count;
 bool installed;
 

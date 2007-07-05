@@ -6,7 +6,6 @@
 #include <elf.h>
 #include <story.h>
 #include <messages.h>
-#include <interface.h>
 
 void process_manager();
 
@@ -19,7 +18,6 @@ Task* procman;
 
 public:
 CoreMessenger* messenger;
-InterfaceManager* interfaces;
 Task* load_executable(unsigned int start, unsigned int size, char* command_line);
 Core(multiboot_info_t*);
 void launch_procman();

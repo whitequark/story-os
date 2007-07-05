@@ -28,56 +28,60 @@ int i;
 count_pages = memory_amount >> 12;
 unsigned int reserved_pages = first_accessible_address >> 12;
 free_pages = count_pages - reserved_pages;
-for(i = 0; i < count_pages; i++)
- {
- if(i >= reserved_pages)
-  reset_bit(i);
- else
-  set_bit(i);  
- }
+mb = &first; //need to declare them statically 'cause no new or malloc at this point
+mb->first = 0;
+mb->count = reserved_pages;
+mb->allocated = true;
+mb->next = &second;
+mb->next->first = reserved_pages + 1;
+mb->next->count = free_pages;
+mb->next->allocated = false;
+mb->next->next = NULL;
+show();
 }
 
-void* MemoryManager::alloc(unsigned int count)
+void* MemoryManager::alloc(unsigned int count, bool no_merge)
 {
-int i;
-unsigned int free_count = 0;
-for(i = 0; i < count_pages; i++)
- {
- if(get_bit(i)) 
-  free_count = 0;
- else
-  free_count++;
- if(free_count == count)
+MemoryBlock *cmb, *nmb; //current memory block, next -//-, first -//- (lower)
+for(cmb = mb; cmb != NULL; cmb = cmb->next)
+ if(cmb->count >= count && cmb->allocated == false)
+  break;
+if(cmb == NULL)
+ if(!no_merge)
   {
-  int first_page = i - free_count + 1;
-  set_bit(first_page);
-  int n;
-  for(n = 1; n < count; n++)
-   set_bit(first_page + n);
-  free_pages -= count;
-  return (void*) (first_page << 12);
+  merge();
+  return alloc(count, true);
   }
+ else return NULL;
+
+nmb = cmb->next;
+cmb->allocated = true;
+if(cmb->count != count)
+ {
+ MemoryBlock* fmb = new MemoryBlock;
+ fmb->count = cmb->count - count;
+ fmb->first = cmb->first + count;
+ fmb->next = nmb;
+ cmb->count = count;
+ cmb->next = fmb; //insert free fmb in the middle of vmb and nmb
  }
-return NULL;
+free_pages -= count;
+return (void*) (cmb->first << 12);
 }
 
 void MemoryManager::free(void* address)
 {
-return;
-hal->panic("FREE called!");
-if(address == NULL)
- return;
 unsigned int page = ((unsigned int) address) >> 12;
-if(((unsigned int) address) & 0xFFF)
- hal->panic("Attempt to free non-aligned address %X\n", address);
-if(!(page_bitmap[page] & PAGE_ALLOCATED))
- hal->panic("Attempt to free unallocated memory page: %X\n", address);
-if(!(page_bitmap[page] & ~PAGE_ALLOCATED))
- hal->panic("Attempt to free zero-length memory block: %X\n", address);
-unsigned int i, count = page_bitmap[page] & ~PAGE_ALLOCATED;
-for(i = page; i < page + count; i++)
- page_bitmap[i] = PAGE_FREE;
-free_pages += count;
+MemoryBlock *cmb; //current memory block
+for(cmb = mb; cmb != NULL; cmb = cmb->next)
+ if(cmb->first == page)
+  break;
+if(cmb == NULL)
+ return;
+if(cmb->allocated == false)
+ return;
+cmb->allocated = false;
+free_pages += cmb->count;
 }
 
 unsigned int MemoryManager::free_memory()
@@ -85,22 +89,31 @@ unsigned int MemoryManager::free_memory()
 return free_pages << 12;
 }
 
-void MemoryManager::set_safe_printf()
+unsigned int MemoryManager::all_memory()
 {
-safe_printf = true;
+return count_pages << 12;
 }
 
-inline void MemoryManager::set_bit(unsigned int page)
+void MemoryManager::merge()
 {
-page_bitmap[page / 32] |= (1 << page % 32);
+bool no_advance = false;
+for(MemoryBlock* cmb = mb; cmb != NULL; cmb = no_advance ? cmb : cmb->next)
+ if(!cmb->allocated && !cmb->next->allocated)
+  {
+  MemoryBlock* nnmb = cmb->next->next;
+  cmb->count += cmb->next->count;
+  delete cmb->next;
+  cmb->next = nnmb;
+  if(!cmb->next || cmb->next->allocated)
+   no_advance = false;
+  else
+   no_advance = true;
+  }
 }
 
-inline bool MemoryManager::get_bit(unsigned int page)
+void MemoryManager::show()
 {
-return (page_bitmap[page / 32] & (1 << page % 32)) != 0;
-}
-
-inline void MemoryManager::reset_bit(unsigned int page)
-{
-page_bitmap[page / 32] &= ~(1 << page % 32);
+MemoryBlock *cmb;
+for(cmb = mb; cmb != NULL; cmb = cmb->next)
+ printf("block at 0x%X: <-> 0x%X, allocated: %i\n", cmb->first << 12, cmb->count << 12, cmb->allocated);
 }

@@ -1,6 +1,18 @@
 #ifndef _IDT_H_
 #define _IDT_H_
 
+struct HRegisters
+{
+unsigned int   eax;
+unsigned int   ebx;
+unsigned int   ecx;
+unsigned int   edx;
+unsigned int   esi;
+unsigned int   edi;
+unsigned int   esp;
+unsigned int   ebp;
+} __attribute__((__packed__));
+
 #define IRQ_HANDLER(func) extern "C" void func (); void _i_ ## func () { asm(".globl " #func " \n " #func ": cli \n pusha \n call _" #func " \n movb $0x20, %al \n outb %al, $0x20 \n popa \n sti \n iret \n"); } extern "C" void _ ## func(void)
 
 //when irq>0x7 we need EOI both slave&master
@@ -23,7 +35,7 @@
  "iret \n" \
  #func "_errcode: .long 0 \n" \
  #func "_address: .long 0"); \
- extern "C" void _ ## func(unsigned int address, unsigned int errcode)
+ extern "C" void _ ## func(unsigned int address, unsigned int errcode, HRegisters r)
 
 #define MAKE_ISR(x) ((void(*)())x)
  

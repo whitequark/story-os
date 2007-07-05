@@ -16,26 +16,46 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <ipc.h>
-#include <application.h>
+#include <procman.h>
+#include <mutex.h>
 
-int Application::run()
+Mutex mutex;
+
+void thread()
 {
-Messenger m;
+Procman p;
+while(1)
+ {
+ char c = '2';
+ 
+ Messenger m;
+ Message msg;
+ msg.task = PROCMAN_TID;
 
-char a = 'a', b = 'b';
+ msg.type = 0xf;
+ msg.size = 1;
+ msg.buffer = &c;
+ m.send(msg);
+ p.delay(500);
+ }
+}
 
-Message msg;
-msg.task = PROCMAN_TID;
+int main()
+{
+Procman p;
+p.create_thread((void*) &thread);
+while(1)
+ {
+ char c = '1';
+ 
+ Messenger m;
+ Message msg;
+ msg.task = PROCMAN_TID;
 
-msg.type = 100;
-msg.size = 1;
-msg.buffer = &a;
-m.send(msg);
-
-delay(1000);
-
-msg.type = 100;
-msg.size = 1;
-msg.buffer = &b;
-m.send(msg);
+ msg.type = 0xf;
+ msg.size = 1;
+ msg.buffer = &c;
+ m.send(msg);
+ p.delay(1000);
+ }
 }

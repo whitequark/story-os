@@ -32,7 +32,6 @@ unsigned int memory_before = hal->mm->free_memory();
 unsigned int memory_after;
 
 messenger = new CoreMessenger;
-interfaces = new InterfaceManager;
 
 launch_procman();
 
@@ -74,7 +73,8 @@ if(errors_found)
  printf("%zErrors when loading modules!%z (-%i KB)\n", RED, LIGHTGRAY, (memory_before - memory_after) / 0x400);
 else
  printf("%zLoaded successfully%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
-printf("Free memory: %i KB\n\n", hal->mm->free_memory() / 0x400);
+printf("Free memory: %i KB / %i KB\n\n", 
+	hal->mm->free_memory() / 0x400, hal->mm->all_memory() / 0x400);
 }
 
 Task* Core::load_executable(unsigned int start, unsigned int size, char* command_line)
@@ -86,6 +86,11 @@ if(file[0] == 0x7f && file[1] == 'E' && file[2] == 'L' && file[3] == 'F')
  printf("\nload_executable: ELF detected\n");
  #endif
  return load_elf(start, size);
+ }
+else if(file[0] == 'M' && file[1] == 'Z')
+ {
+ printf("\nload_executable: PE not supported\n");
+ return NULL;
  }
 #ifdef _DEBUGGING_EXECUTABLE_LOADER_
 printf("\nload_executable: wrong file format\n");
@@ -130,7 +135,11 @@ for(p = pheader; p < pheader + header->e_phnum; p++)
   printf("load_elf: file 0x%X (%i bytes) -> virtual 0x%X (%i bytes)\n", p->p_offset, p->p_filesz, p->p_vaddr, p->p_memsz);
   printf("load_elf: flags = 0x%x, align = %i\n", p->p_flags, p->p_align);
   #endif
-  vmm->map(start + p->p_offset, p->p_vaddr, pages, PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER);
+  vmm->alloc_at((start + p->p_offset) & 0xFFFFF000, 
+  		p->p_vaddr & 0xFFFFF000, 
+  		pages, 
+  		PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER,
+  		true);
   }
  else
   {
@@ -147,4 +156,5 @@ void Core::launch_procman()
 {
 VirtualMemoryManager* vmm = new VirtualMemoryManager(true);
 procman = hal->taskman->create_task(0, (unsigned int) &process_manager, 1, vmm);
+procman->tss->eflags |= 0x3000;
 }
