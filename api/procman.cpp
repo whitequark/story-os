@@ -17,6 +17,8 @@
 
 #include <procman.h>
 #include <ipc.h>
+#include <string.h>
+#include <vsprintf.h>
 
 void Procman::delay(unsigned int millis)
 {
@@ -103,4 +105,21 @@ msg.buffer = &value;
 m.receive_reply(msg);
 
 return value;
+}
+
+void Procman::printf(char* fmt, ...)
+{
+char s[2000];
+va_list list;
+va_start(list, fmt);
+vsprintf(s, fmt, list);
+va_end(list);
+
+Messenger m;
+Message msg;
+msg.task = PROCMAN_TID;
+msg.type = 0xf;
+msg.size = strlen(s) + 1;
+msg.buffer = s;
+m.send(msg);
 }

@@ -15,47 +15,9 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <ipc.h>
 #include <procman.h>
-#include <mutex.h>
-
-Mutex mutex;
-
-void thread()
-{
-Procman p;
-while(1)
- {
- char c = '2';
- 
- Messenger m;
- Message msg;
- msg.task = PROCMAN_TID;
-
- msg.type = 0xf;
- msg.size = 1;
- msg.buffer = &c;
- m.send(msg);
- p.delay(500);
- }
-}
 
 int main()
 {
 Procman p;
-p.create_thread((void*) &thread);
-while(1)
- {
- char c = '1';
- 
- Messenger m;
- Message msg;
- msg.task = PROCMAN_TID;
-
- msg.type = 0xf;
- msg.size = 1;
- msg.buffer = &c;
- m.send(msg);
- p.delay(1000);
- }
 }

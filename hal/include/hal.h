@@ -33,12 +33,13 @@ class HAL
 {
 private:
 int int_block_count;
-multiboot_info_t mbi;
 
 HAL();
+void _backtrace();
 
 public:
 char* lfb;
+multiboot_info_t *mbi;
 
 KernelTerminal* terminal;
 MemoryManager* mm;
@@ -81,16 +82,17 @@ void cli_c(); //with counter
 void sti_c();
 
 void panic(char*, ...);
-void failure(char*);
 
 HAL(multiboot_info_t* mbi);
 };
 
 extern HAL* hal;
 
+void kernel_backtrace();
+void user_backtrace();
+void raw_backtrace();
+
 void putchar(char c);
 void textcolor(char color);
-void* palloc(unsigned int count);
-void pfree(void* address);
 
 #endif

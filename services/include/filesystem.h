@@ -5,39 +5,30 @@
 
 class FilesystemObject
 {
+private:
+FilesystemObject(FilesystemObject&);
+FilesystemObject& operator=(FilesystemObject&);
+
 public:
+FilesystemObject(char* name);
 char* name;
+List<FilesystemObject*>* children;
 };
+
+typedef List<FilesystemObject*> FSOList;
 
 class Filesystem
 {
 private:
-List<FilesystemObject*> files;
+FSOList* files;
+void show(int level, FSOList* list);
+List<char*>* strip_path(char* path);
 
 public:
-enum { mtRegister, mtResolve };
 Filesystem();
+void show();
+FilesystemObject* get(char* name);
+bool add(char* name);
 };
-
-/*struct FileID
-{
-unsigned int filesystem_service;
-unsigned int filesystem_id;
-unsigned int device_service;
-unsigned int device_id;
-};
-
-class File
-{
-private:
-char* name;
-FileID id;
-File();
-
-public:
-enum { mtResolve };
-File(char* name);
-bool open();
-};*/
 
 #endif

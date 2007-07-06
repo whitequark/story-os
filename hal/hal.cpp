@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <hal.h>
 #include <string.h>
+#include <elf.h>
 
 void HAL::panic(char *fmt, ...)
 {
@@ -61,7 +62,7 @@ asm("cli");
 
 unsigned int HAL::get_memory_amount()
 {
-return mbi.mem_upper;
+return mbi->mem_upper;
 }
 
 void HAL::wait_for_debugger()
@@ -76,7 +77,7 @@ printf("%zok%z\n", LIGHTGREEN, LIGHTGRAY);
 char* HAL::option(char* opt_needed)
 {
 char* option = NULL;
-char* cmd = (char*) mbi.cmdline;
+char* cmd = (char*) mbi->cmdline;
  
 while(1)
  {
@@ -120,7 +121,7 @@ while(1)
 return NULL;
 }
 
-HAL::HAL(multiboot_info_t* _mbi): lfb((char*)0xB8000), mbi(*_mbi)
+HAL::HAL(multiboot_info_t* _mbi): lfb((char*)0xB8000), mbi(_mbi)
 {
 }
 

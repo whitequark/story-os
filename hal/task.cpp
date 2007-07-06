@@ -171,7 +171,7 @@ task->tss->esi = 0;
 task->tss->edi = 0;
 
 unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE);
-stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 1;
+stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 4;
 
 /*unsigned int stack_pl3 = (unsigned int) hal->mm->alloc(PL3_STACK_SIZE);
 task->vmm->map(stack_pl3, 0xE0000000, PL3_STACK_SIZE, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);

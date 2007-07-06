@@ -1,7 +1,8 @@
 include ../template.mk
 LIB=../lib/*.o
 API=../api/*.o
-SAPI=api_*.o
+SAPI=
+#api_*.o
 
 all:	filesystem.o filesystem
 

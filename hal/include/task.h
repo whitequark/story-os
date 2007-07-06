@@ -70,6 +70,7 @@ unsigned int index;
 unsigned int pl; //privilegy level
 unsigned int priority;
 
+void* image;
 VirtualMemoryManager* vmm;
 
 CoreMessage* message;

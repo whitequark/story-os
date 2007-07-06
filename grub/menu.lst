@@ -4,4 +4,4 @@ title Story OS
 	module /idle
 ##	module /terminal
 	module /app
-##	module /filesystem
+	module /filesystem

@@ -28,22 +28,16 @@ Core::Core(multiboot_info_t* mbi)
 {
 printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 
-unsigned int memory_before = hal->mm->free_memory();
-unsigned int memory_after;
-
 messenger = new CoreMessenger;
-
 launch_procman();
 
-memory_after = hal->mm->free_memory();
-printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
-memory_before = hal->mm->free_memory();
+printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
 
 bool errors_found = false;
 
 if(mbi->mods_count > 0)
  {
- printf("%zLoading modules%z (detected %i):\n", GREEN, LIGHTGRAY, mbi->mods_count);
+ printf("%zLoading modules%z:\n", GREEN, LIGHTGRAY);
  
  module_t* mod;
  for(mod = (module_t*)mbi->mods_addr; mod->mod_start != NULL; mod++)
@@ -65,16 +59,14 @@ if(mbi->mods_count > 0)
    }
   }
  }
-else
- hal->panic("No modules detected!\n");
+else hal->panic("No modules detected!\n");
 
-memory_after = hal->mm->free_memory();
-if(errors_found)
- printf("%zErrors when loading modules!%z (-%i KB)\n", RED, LIGHTGRAY, (memory_before - memory_after) / 0x400);
-else
- printf("%zLoaded successfully%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
+if(errors_found) printf("%zErrors when loading modules!%z\n", RED, LIGHTGRAY);
+else             printf("%zLoaded successfully%z\n", GREEN, LIGHTGRAY);
+ 
 printf("Free memory: %i KB / %i KB\n\n", 
 	hal->mm->free_memory() / 0x400, hal->mm->all_memory() / 0x400);
+
 }
 
 Task* Core::load_executable(unsigned int start, unsigned int size, char* command_line)
@@ -149,6 +141,7 @@ for(p = pheader; p < pheader + header->e_phnum; p++)
   }
  }
 Task* task = hal->taskman->create_task(3, header->e_entry, 1, vmm);
+task->image = (void*) start;
 return task;
 }
 

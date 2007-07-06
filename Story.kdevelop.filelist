@@ -73,3 +73,6 @@ api/mutex.cpp
 lib
 lib/include
 lib/include/list.h
+hal/backtrace.cpp
+lib/vsprintf.cpp
+lib/include/vsprintf.h

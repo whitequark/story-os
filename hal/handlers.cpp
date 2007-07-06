@@ -49,33 +49,41 @@ void common_exception_handler(int number, int address, int errcode, HRegisters r
 hal->cli();
 unsigned int cr2;
 asm("mov %%cr2, %0":"=d"(cr2));
-printf("\n          %zException Occured (Task %i)!%z", YELLOW, hal->taskman->current->index, LIGHTGRAY); 
+printf("\n    %zException Occured (Task %i)!%z", YELLOW, hal->taskman->current->index, LIGHTGRAY); 
 printf(" EIP: %z%X%z", LIGHTGREEN, address, LIGHTGRAY);
-printf("\n          Error:%z ", LIGHTBLUE);
+printf("\n    Error:%z ", LIGHTBLUE);
 printf(exception_names[number]);
 printf(" %zError Code:%z ", LIGHTGRAY, LIGHTBLUE);
 printf("%X%z", errcode, LIGHTGRAY);
 if(number == 0x0E)
  {
- if(errcode & 2)	printf("\n          %zWrite%z error: ", LIGHTRED, LIGHTGRAY);
- else			printf("\n          %zRead%z error: ", LIGHTGREEN, LIGHTGRAY);
+ if(errcode & 2)	printf("\n    %zWrite%z error: ", LIGHTRED, LIGHTGRAY);
+ else			printf("\n    %zRead%z error: ", LIGHTGREEN, LIGHTGRAY);
  if(errcode & 1)	printf("%zpermission denied%z", YELLOW, LIGHTGRAY);
  else			printf("%zpage not found%z", YELLOW, LIGHTGRAY);
  if(errcode & 4)	printf(" at level %z3%z, ", LIGHTBLUE, LIGHTGRAY);
  else			printf(" at level %z0%z, ", LIGHTBLUE, LIGHTGRAY);
- printf("address %z%X%z\n", LIGHTGREEN, cr2, LIGHTGRAY);
+ printf("address %z%X%z", LIGHTGREEN, cr2, LIGHTGRAY);
  }
 if(hal->taskman->current->index == 0)
  {
- printf("            %zSystem halted.\n", LIGHTRED);
+ printf("\n      %zSystem halted.\n\n", LIGHTRED);
+ kernel_backtrace();
  for(;;);
  }
 else
  {
- printf("            %zTask will be terminated.%z\n", LIGHTRED, LIGHTGRAY);
- int index = hal->taskman->current->index;
- hal->taskman->kill(hal->taskman->current->index, 1);
- hal->sti();
+ if(number == 0x0E)
+  printf("\n      %zTask will be terminated.%z\n\n", LIGHTRED, LIGHTGRAY);
+ else
+  printf("\n      %zSystem halted.\n\n", LIGHTRED);
+ user_backtrace();
+ if(number == 0x0E)
+  {
+  int index = hal->taskman->current->index;
+  hal->taskman->kill(hal->taskman->current->index, 1);
+  hal->sti();
+  }
  while(1);
  }
 }

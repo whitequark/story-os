@@ -94,10 +94,7 @@ hal->terminal->clear();
 if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
  hal->panic("Invalid magic number! I can be booted only with multiboot bootloader, e.g. GRUB!");
 
-unsigned int memory_before = mm->free_memory();
-unsigned int memory_after;
-
-printf("%zStory OS%z version %z%s (build %i)%z, Copyright (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
+printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
 printf("%zStory OS%z comes with ABSOLUTELY NO WARRANTY; for details type `cat warranty'\n", LIGHTBLUE, LIGHTGRAY);
@@ -152,8 +149,7 @@ set_debug_traps();
 breakpoint();
 #endif
 
-memory_after = mm->free_memory();
-printf("%zCOMPLETE%z (-%i KB)\n", GREEN, LIGHTGRAY, (memory_before - memory_after) / 0x400);
+printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
 
 core = new Core(multiboot_info);
 

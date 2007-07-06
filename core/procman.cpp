@@ -21,6 +21,7 @@
 #include <core.h>
 #include <stdlib.h>
 #include <procman.h>
+#include <string.h>
 
 void process_manager()
 {
@@ -116,11 +117,10 @@ while(1)
   break;
   
   case 0xf:
-  char c;
-  msg.buffer = &c;
-  msg.size = 1;
+  char s[1000];
+  msg.buffer = &s;
   m.receive(msg);
-  printf("%c", c);
+  printf("%s", s);
   m.reply(reply);
   break;
   
