@@ -47,7 +47,7 @@ unsigned int   esi;
 unsigned int   edi;
 } __attribute__((__packed__)) Registers;
 
-typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage, rsReply } WaitingReason;
+typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage, rsReply, rsNotNULL } WaitingReason;
 
 /*
 PL's:
@@ -106,6 +106,7 @@ bool scheduler_running;
 Task* task(unsigned int index);
 void schedule();
 void status();
+bool no_schedule;
 };
 
 #endif

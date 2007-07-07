@@ -138,7 +138,7 @@ asm volatile ("movl %%ebp, %0" : "=r" (fp));
 
 printf("    Call trace:\n");
 
-for (i = 0; i < 16; i++) 
+for (i = 0; i < 10; i++) 
  {
  fp = (unsigned int *)(*fp);
  if (!(*(fp + 1) && *fp))

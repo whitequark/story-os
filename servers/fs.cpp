@@ -16,20 +16,42 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <filesystem.h>
-#include <ipc.h>
+#include <file.h>
 #include <string.h>
+#include <procman.h>
 
-File::File(char* name)
+int main()
 {
-Interface("fs").wait();
-this->name = name;
-}
+Procman p(true);
+Messenger m;
 
-bool File::open()
-{
-Message(mtResolve, Interface("fs").task(), name, strlen(name)).send();
-Reply().data(&id);
-if(id.filesystem_id == 0)
- return false;
-else return true;
+Message msg;
+msg.task = p.get_tid();
+msg.type = Procman::mtSetFilesystemTID;
+msg.size = 0;
+m.send(msg); //I am Filesystem Server
+
+while(1)
+ {
+ p.wait_for_message();
+ 
+ Message msg, reply;
+ reply.size = 0;
+ reply.buffer = NULL;
+ reply.type = rtOk;
+ msg.size = 0; //after receive() size = real message size
+ msg.buffer = NULL;
+ m.receive(msg);
+ 
+ switch(msg.type)
+  {
+  case File::mtCreate:
+  break;
+  
+  case File::mtResolve:
+  
+  default:
+  m.reply(reply);
+  }
+ }
 }

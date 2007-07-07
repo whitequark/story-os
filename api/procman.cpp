@@ -16,15 +16,28 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <procman.h>
-#include <ipc.h>
 #include <string.h>
 #include <vsprintf.h>
 
+Procman::Procman()
+{
+asm("int $0x31":"=a"(procman_tid):"a"(2));
+Message msg;
+msg.task = procman_tid;
+msg.type = Procman::mtWaitForFilesystem;
+msg.size = 0;
+m.send(msg);
+}
+
+Procman::Procman(bool)
+{
+asm("int $0x31":"=a"(procman_tid):"a"(2));
+}
+
 void Procman::delay(unsigned int millis)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtDelay;
 msg.size = sizeof(millis);
 msg.buffer = &millis;
@@ -33,20 +46,19 @@ m.send(msg);
 
 void Procman::die(int code)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtDie;
 msg.size = sizeof(code);
 msg.buffer = &code;
 m.send(msg);
+while(1);
 }
 
 int Procman::wait_for_die(unsigned int task)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtWaitForDie;
 msg.size = sizeof(task);
 msg.buffer = &task;
@@ -62,9 +74,8 @@ return value;
 
 void Procman::wait_for_irq(unsigned int irq)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtWaitForIRQ;
 msg.size = sizeof(irq);
 msg.buffer = &irq;
@@ -73,9 +84,8 @@ m.send(msg);
 
 void* Procman::alloc_pages(unsigned int count)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtAllocPages;
 msg.size = sizeof(count);
 msg.buffer = &count;
@@ -91,9 +101,8 @@ return value;
 
 unsigned int Procman::create_thread(void* entry_point)
 {
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = Procman::mtCreateThread;
 msg.size = sizeof(entry_point);
 msg.buffer = &entry_point;
@@ -107,6 +116,15 @@ m.receive_reply(msg);
 return value;
 }
 
+void Procman::wait_for_message()
+{
+Message msg;
+msg.task = procman_tid;
+msg.type = Procman::mtWaitForMessage;
+msg.size = 0;
+m.send(msg);
+}
+
 void Procman::printf(char* fmt, ...)
 {
 char s[2000];
@@ -115,11 +133,31 @@ va_start(list, fmt);
 vsprintf(s, fmt, list);
 va_end(list);
 
-Messenger m;
 Message msg;
-msg.task = PROCMAN_TID;
+msg.task = procman_tid;
 msg.type = 0xf;
-msg.size = strlen(s) + 1;
+msg.size = 2000;
 msg.buffer = s;
 m.send(msg);
+}
+
+unsigned int Procman::get_tid()
+{
+return procman_tid;
+}
+
+unsigned int Procman::get_fs_server_tid()
+{
+Message msg;
+msg.task = procman_tid;
+msg.type = Procman::mtGetFilesystemTID;
+msg.size = 0;
+m.send(msg);
+
+unsigned int value;
+msg.size = sizeof(value);
+msg.buffer = &value;
+m.receive_reply(msg);
+
+return value;
 }

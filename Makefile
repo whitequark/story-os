@@ -9,7 +9,7 @@ all:
 	@make -C core
 	@make -C lib
 	@make -C api
-	@make -C services
+	@make -C servers
 	@make -C apps
 	@echo "Linking kernel"
 	@ld -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386

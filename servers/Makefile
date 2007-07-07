@@ -1,10 +1,9 @@
 include ../template.mk
 LIB=../lib/*.o
 API=../api/*.o
-SAPI=
-#api_*.o
+SAPI=api_*.o
 
-all:	filesystem.o filesystem
+all:	api_filesystem.o api_file.o fs.o fs
 
 %: %.o
 	@echo "Linking '$@'"

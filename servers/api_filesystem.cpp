@@ -16,12 +16,8 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <filesystem.h>
-#include <story.h>
-#include <ipc.h>
 #include <string.h>
 #include <procman.h>
-
-Procman p;
 
 FilesystemObject::FilesystemObject(char* name)
 {
@@ -90,9 +86,10 @@ return current->item;
 void Filesystem::show(int level, FSOList* list)
 {
 FSOList* i;
+Procman p;
 iterate_list(i, list)
  {
- for(int k = 0; k < level; k++)
+ for(int j = 0; j < level; j++)
   p.printf(" ");
  p.printf("/%s\n", i->item->name);
  if(i->item->children)
@@ -100,7 +97,6 @@ iterate_list(i, list)
  }
 }
 
-//don't ask me about HOW it works - it works, and that's good!
 bool Filesystem::add(char* nspath)
 {
 List<char*>* path = strip_path(nspath);
@@ -153,17 +149,4 @@ iterate_list(i, k)
  current = list;
  }
 return true;
-}
-
-int main()
-{
-Filesystem f;
-f.add("/dev/hda");
-f.add("/dev/hdb");
-f.show();
-FilesystemObject* obj = f.get("/dev/hda");
-if(obj)
- p.printf("found: name '%s'\n", obj->name);
-else
- p.printf("not found\n");
 }

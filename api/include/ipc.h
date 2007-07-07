@@ -3,8 +3,6 @@
 
 #include <msgtype.h>
 
-#define PROCMAN_TID 2
-
 struct Message
 {
 unsigned int size;

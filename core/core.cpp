@@ -59,14 +59,13 @@ if(mbi->mods_count > 0)
    }
   }
  }
-else hal->panic("No modules detected!\n");
+//else hal->panic("No modules detected!\n");
 
 if(errors_found) printf("%zErrors when loading modules!%z\n", RED, LIGHTGRAY);
 else             printf("%zLoaded successfully%z\n", GREEN, LIGHTGRAY);
  
 printf("Free memory: %i KB / %i KB\n\n", 
 	hal->mm->free_memory() / 0x400, hal->mm->all_memory() / 0x400);
-
 }
 
 Task* Core::load_executable(unsigned int start, unsigned int size, char* command_line)
@@ -114,24 +113,27 @@ Elf32_Phdr* p;
 for(p = pheader; p < pheader + header->e_phnum; p++)
  {
  #ifdef _DEBUGGING_ELF_LOADER_
- printf("load_elf: program header element type 0x%X\n", p->p_type);
+ printf("load_elf: program header element type 0x%x\n", p->p_type);
  #endif
  if(p->p_type == PT_NULL)
   ;
  else if(p->p_type == PT_LOAD)
   {
   unsigned int pages = hal->paging->bytes_to_pages(p->p_memsz);
-  if(p->p_memsz == 0)
-   pages = 1;
+  if(p->p_filesz == 0) //FIXME: some bug at alloc_at???
+   continue;
+  unsigned int phys = (start + p->p_offset) & 0xFFFFF000;
+  unsigned int virt = p->p_vaddr & 0xFFFFF000;
+  unsigned int count = pages;
+  unsigned int flags = PAGE_PRESENT | PAGE_USER | (p->p_flags & PF_W ? PAGE_WRITABLE : 0);
   #ifdef _DEBUGGING_ELF_LOADER_
-  printf("load_elf: file 0x%X (%i bytes) -> virtual 0x%X (%i bytes)\n", p->p_offset, p->p_filesz, p->p_vaddr, p->p_memsz);
-  printf("load_elf: flags = 0x%x, align = %i\n", p->p_flags, p->p_align);
+  printf("load_elf: file 0x%X (0x%x bytes) -> virtual 0x%X (0x%x bytes)\n", 
+  	p->p_offset, p->p_filesz, p->p_vaddr, p->p_memsz);
+  printf("load_elf: flags = 0x%x, align = 0x%x\n", p->p_flags, p->p_align);
+  printf("load_elf: mapping 0x%X to 0x%X: %i pages, %s\n", phys, virt, count,
+  	flags & PAGE_WRITABLE ? "writable" : "read only");
   #endif
-  vmm->alloc_at((start + p->p_offset) & 0xFFFFF000, 
-  		p->p_vaddr & 0xFFFFF000, 
-  		pages, 
-  		PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER,
-  		true);
+  vmm->alloc_at(phys, virt, count, flags, true, "ELF PT_LOAD segment");
   }
  else
   {
@@ -150,4 +152,5 @@ void Core::launch_procman()
 VirtualMemoryManager* vmm = new VirtualMemoryManager(true);
 procman = hal->taskman->create_task(0, (unsigned int) &process_manager, 1, vmm);
 procman->tss->eflags |= 0x3000;
+procman_initialized = false;
 }

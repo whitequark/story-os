@@ -1,10 +1,9 @@
 include ../template.mk
 LIB=../lib/*.o
 API=../api/*.o
-SAPI=
-##../services/api_*.o
+SAPI=../servers/api_*.o
 
-all:	app.o app idle.o idle
+all:	app.o app
 
 %: %.o
 	@echo "Linking '$@'"

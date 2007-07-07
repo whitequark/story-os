@@ -1,7 +1,9 @@
+timeout 1
+
 title Story OS
 	root (cd)
 	kernel /kernel
-	module /idle
 ##	module /terminal
 	module /app
-	module /filesystem
+	module /fs
+

@@ -17,7 +17,6 @@
 
 #include <colors.h>
 #include <system.h>
-#include <terminal.h>
 
 extern "C" void __assert_fail (__const char *__assertion, __const char *__file,
                            unsigned int __line, __const char *__function)

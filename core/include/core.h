@@ -21,6 +21,7 @@ CoreMessenger* messenger;
 Task* load_executable(unsigned int start, unsigned int size, char* command_line);
 Core(multiboot_info_t*);
 void launch_procman();
+bool procman_initialized;
 };
 
 extern Core* core;

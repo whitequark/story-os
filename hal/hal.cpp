@@ -154,7 +154,8 @@ if(cursory == 25)
  cursory = 24;
  cursorx = 0;
  memcpy(lfb, lfb + 80, 24*80*2);
- memset(lfb + 80*24, 0, 80*2);
+ for(int i = 80*24; i < 80*25; i++)
+  lfb[i] = 0x0700;
  }
 unsigned short offset = cursorx + cursory * 80;
 hal->outb(VGA_CRT_IC, 0x0f);

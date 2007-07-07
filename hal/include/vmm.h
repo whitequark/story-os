@@ -12,6 +12,7 @@ unsigned int count;
 void* physical;
 bool allocated;
 bool reserved;
+char* description;
 VMemoryBlock* next;
 };
 
@@ -22,19 +23,19 @@ PageDirectory* directory;
 VMemoryBlock* mb;
 int threads;
 void merge();
-void show();
 
 public:
 VirtualMemoryManager();
 VirtualMemoryManager(bool);
 ~VirtualMemoryManager();
-void* alloc(unsigned int count, bool no_merge = false);
+void* alloc(unsigned int count, char* descr = "", bool no_merge = false);
 void free(void* address);
 void map(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr);
-void alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved);
+void alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved, char* description = "");
 void load();
 unsigned int get_directory();
 int change_threads(int delta);
+void show();
 };
 
 #endif

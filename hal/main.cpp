@@ -97,10 +97,7 @@ if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
 printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
-printf("%zStory OS%z comes with ABSOLUTELY NO WARRANTY; for details type `cat warranty'\n", LIGHTBLUE, LIGHTGRAY);
-printf("This is free software, and you are welcome to redistribute it\n");
-printf("under certain conditions; type `cat copying' for details.\n");
-printf("Thanks to: Legos, DinamytE, SadKo.\n\n");
+printf("Thanks to Legos, DinamytE, SadKo.\n\n");
 
 printf("%zInitializing HAL...%z ", GREEN, LIGHTGRAY);
 

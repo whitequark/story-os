@@ -76,13 +76,14 @@ else
  if(number == 0x0E)
   printf("\n      %zTask will be terminated.%z\n\n", LIGHTRED, LIGHTGRAY);
  else
-  printf("\n      %zSystem halted.\n\n", LIGHTRED);
- user_backtrace();
+  printf("\n      %zSystem halted.%z\n\n", LIGHTRED, LIGHTGRAY);
+ hal->taskman->current->vmm->show();
  if(number == 0x0E)
   {
-  int index = hal->taskman->current->index;
+  user_backtrace();
+/*  int index = hal->taskman->current->index;
   hal->taskman->kill(hal->taskman->current->index, 1);
-  hal->sti();
+  hal->sti();*/
   }
  while(1);
  }

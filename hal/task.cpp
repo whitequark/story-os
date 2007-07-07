@@ -31,10 +31,16 @@ while(1)
   {
   ticks_remaining = current->priority;
   unsigned int oldi = current->index;
-  do { current = current->next; }
+  do 
+   {
+   current = current->next; 
+   if(current->reason == rsNotNULL)
+    if(*((unsigned int*) current->wait_object) != 0)
+     current->reason = rsNone;
+   }
   while(current->reason != rsNone || current->priority == 0);
   unsigned int newi = current->index;
- // printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
+  //printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
   scheduler_running = false;
   run_task(current);
   }
@@ -52,10 +58,13 @@ extern "C" void timer_handler()
 {
 static int d;
 const int p = 300;
-char c[4] = { '\\', '|', '/', '-' };
-asm("movb %%al, 0xB8000+80*2-1"::"a"(WHITE));
-asm("movb %%al, 0xB8000+80*2-2"::"a"(c[(d++)/p]));
 if(d == p*4) d = 0;
+if(d > p * 2)
+ { hal->outb(0x0a, 0x3d4); hal->outb(12, 0x3d5);
+   hal->outb(0x0b, 0x3d4); hal->outb(13, 0x3d5); } 
+else 
+ { hal->outb(0x0a, 0x3d4); hal->outb(32, 0x3d5);
+   hal->outb(0x0b, 0x3d4); hal->outb(32, 0x3d5); }
 
 hal->clock->tick();
 
@@ -71,7 +80,7 @@ for(n = 0, t = hal->taskman->current; t != hal->taskman->current || n == 0; n++,
 
 hal->outb(0x20, 0x20);
 
-if(!hal->taskman->scheduler_running)
+if(!hal->taskman->scheduler_running && !hal->taskman->no_schedule)
  {
  hal->taskman->scheduler_running = true;
  hal->taskman->schedule();
@@ -93,9 +102,6 @@ asm(
 	"push %ax\n"
 	"call timer_handler\n"
 	"add $2, %esp\n"
-
-	"movb $0x20,%al\n"
-	"outb %al,$0x20\n"
 
 	"pop %es\n"
 	"pop %ds\n"
@@ -170,12 +176,8 @@ task->tss->edx = 0;
 task->tss->esi = 0;
 task->tss->edi = 0;
 
-unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE);
-stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 4;
-
-/*unsigned int stack_pl3 = (unsigned int) hal->mm->alloc(PL3_STACK_SIZE);
-task->vmm->map(stack_pl3, 0xE0000000, PL3_STACK_SIZE, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);
-stack_pl3 = 0xE0000000 + PL3_STACK_SIZE * 0x1000 - 1;*/
+unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE, "stack");
+stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 10;
 
 task->tss->esp0 = stack_pl0;
 task->tss->esp = stack_pl3;
@@ -210,6 +212,10 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
  printf("Task %i: pl = %i", t->index, t->pl);
  switch(t->reason)
   {
+  case rsNone:
+  printf(", ready to run");
+  break;
+  
   case rsDead:
   printf(", dead");
   break;
@@ -233,6 +239,13 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
   case rsReply:
   printf(", waiting for reply");
   break;
+  
+  case rsNotNULL:
+  printf(", waiting for 0x%X became not null", t->wait_object);
+  break;
+  
+  default:
+  printf(", waiting unknown object");
   }
  printf(", priority = %i", t->priority);
  printf("\n");

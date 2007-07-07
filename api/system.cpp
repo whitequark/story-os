@@ -25,13 +25,13 @@ int main();
 extern "C" void _start()
 {
 init_mallocator();
-Procman p;
+Procman p(true);
 p.die(main());
 }
 
 void* morecore(unsigned int count)
 {
-Procman p;
+Procman p(true);
 return p.alloc_pages(count);
 }
 

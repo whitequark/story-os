@@ -31,10 +31,12 @@ mb->first = 0;
 mb->count = USER_SPACE_START - 1;
 mb->allocated = true;
 mb->reserved = true;
+mb->description = "kernel area";
 mb->next = new VMemoryBlock;
 mb->next->first = USER_SPACE_START;
 mb->next->count = 0xFFFFF - USER_SPACE_START;
 mb->next->allocated = false;
+mb->next->description = "free space";
 mb->next->next = NULL;
 }
 
@@ -56,10 +58,24 @@ for(i = 0; i < 32; i++)
   table->page[j] = address | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
   }
  }
+
+mb = new VMemoryBlock;
+mb->first = 0;
+mb->count = 0x10000 - 1;
+mb->allocated = true;
+mb->reserved = true;
+mb->description = "kernel area";
+mb->next = new VMemoryBlock;
+mb->next->first = 0x10000;
+mb->next->count = 0xFFFFF - 0x10000;
+mb->next->allocated = false;
+mb->next->description = "free space";
+mb->next->next = NULL;
+
 threads = 1;
 }
 
-void* VirtualMemoryManager::alloc(unsigned int count, bool no_merge)
+void* VirtualMemoryManager::alloc(unsigned int count, char* descr, bool no_merge)
 {
 VMemoryBlock *vmb, *nmb; //virtual memory block, next -//-, first -//- (lower)
 for(vmb = mb; vmb != NULL; vmb = vmb->next)
@@ -69,7 +85,7 @@ if(vmb == NULL)
  if(!no_merge)
   {
   merge();
-  return alloc(count, true);
+  return alloc(count, descr, true);
   }
  else return NULL;
 
@@ -86,9 +102,11 @@ if(vmb->count != count)
  fmb->count = vmb->count - count;
  fmb->first = vmb->first + count;
  fmb->next = nmb;
+ fmb->description = vmb->description;
  vmb->count = count;
  vmb->next = fmb; //insert free fmb in the middle of vmb and nmb
  }
+vmb->description = descr;
 map((unsigned int) phys, vmb->first << 12, count, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);
 return (void*) (vmb->first << 12);
 }
@@ -137,7 +155,7 @@ for(unsigned int i = 0; i < count; i++)
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
 }
 
-void VirtualMemoryManager::alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved)
+void VirtualMemoryManager::alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved, char* description)
 {
 unsigned int pvirt = virt >> 12; //paged virtual
 VMemoryBlock *vmb = NULL, *amb, *aamb, *nmb;//virtual memory block, allocated -//-, after allocated -//-, next -//-
@@ -156,12 +174,14 @@ else
  aamb->first = vmb->first + count;
  aamb->count = vmb->count - count;
  aamb->next = nmb;
+ aamb->description = amb->description;
  }
 amb->physical = (void*) phys;
 amb->allocated = 1;
 amb->reserved = reserved;
 amb->count = count;
 amb->next = aamb;
+amb->description = description;
 map(phys, virt, count, attr);
 }
 
@@ -178,8 +198,10 @@ return (threads += delta);
 void VirtualMemoryManager::show()
 {
 VMemoryBlock *vmb;
+printf("    VMM status:\n");
 for(vmb = mb; vmb != NULL; vmb = vmb->next)
- printf("block at 0x%X: <-> 0x%X, all: %i, res: %i, physical 0x%X\n", vmb->first << 12, vmb->count << 12, vmb->allocated, vmb->reserved, vmb->physical);
+ printf("      0x%X => 0x%X: <-> 0x%X, %c%c - %s\n", vmb->first << 12, vmb->physical, vmb->count << 12, vmb->allocated ? 'A' : '_', vmb->reserved ? 'R' : '_', vmb->description);
+printf("\n");
 }
 
 void VirtualMemoryManager::merge()

@@ -23,16 +23,18 @@
 #include <procman.h>
 #include <string.h>
 
+unsigned int fs_server_tid = 0;
+
 void process_manager()
 {
 Messenger m;
+core->procman_initialized = true;
 while(1)
  {
  if(hal->taskman->current->message == NULL)
-  {
-  hal->taskman->current->reason = rsMessage;
-  asm("int $0x31"::"a"(0)); //schedule next task
-  }
+  continue;
+ 
+ hal->taskman->no_schedule = true;
  
  Message msg, reply;
  reply.size = 0;
@@ -43,7 +45,7 @@ while(1)
  m.receive(msg);
  
  Task* task = hal->taskman->task(msg.task);
- 
+
  switch(msg.type)
   {
   case Procman::mtDelay:
@@ -92,7 +94,8 @@ while(1)
   m.receive(msg);
   
   void* address;
-  address = task->vmm->alloc(count);
+  address = task->vmm->alloc(count, "morecore");
+  
   reply.size = sizeof(address);
   reply.buffer = &address;
   m.reply(reply);
@@ -116,8 +119,31 @@ while(1)
   m.reply(reply);
   break;
   
+  case Procman::mtWaitForMessage:
+  task->reason = rsMessage;
+  m.reply(reply);
+  break;
+  
+  case Procman::mtSetFilesystemTID:
+  if(fs_server_tid == 0)
+   fs_server_tid = msg.task;
+  m.reply(reply);
+  break;
+  
+  case Procman::mtWaitForFilesystem:
+  task->reason = rsNotNULL;
+  task->wait_object = (unsigned int) &fs_server_tid;
+  m.reply(reply);
+  break;
+  
+  case Procman::mtGetFilesystemTID:
+  reply.size = sizeof(fs_server_tid);
+  reply.buffer = &fs_server_tid;
+  m.reply(reply);
+  break;
+  
   case 0xf:
-  char s[1000];
+  char s[2000];
   msg.buffer = &s;
   m.receive(msg);
   printf("%s", s);
@@ -129,6 +155,6 @@ while(1)
   m.reply(reply);
   break;
   }
- //hal->taskman->status();
+ hal->taskman->no_schedule = false;
  }
 }

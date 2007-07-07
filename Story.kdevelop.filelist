@@ -59,15 +59,7 @@ hal
 hal/include
 hal/include/kprintf.h
 hal/kprintf.cpp
-services
-services/include
-services/include/terminal.h
-services/Makefile
-services/filesystem.cpp
-services/api_filesystem.cpp
-services/include/filesystem.h
 core/procman.cpp
-apps/idle.cpp
 api/include/mutex.h
 api/mutex.cpp
 lib

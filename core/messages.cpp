@@ -27,8 +27,7 @@ unsigned int syscall_send(Registers r)
 Task* receiver = hal->taskman->task(r.esi);
 if(!receiver)
  return false;
- 
-hal->cli();
+
 CoreMessage* msg = new CoreMessage;
 msg->sender = hal->taskman->current->index;
 msg->type = r.ebx;
@@ -57,7 +56,6 @@ if(receiver->reason == rsMessage)
 
 hal->taskman->current->reason = rsReply;
 
-hal->sti();
 hal->taskman->schedule();
 
 return true;
@@ -69,7 +67,6 @@ Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
 if(!receiver)
  return false;
 
-hal->cli();
 CoreMessage* msg = new CoreMessage;
 msg->sender = hal->taskman->current->index;
 msg->type = r.ebx;
@@ -90,6 +87,7 @@ if(receiver->reply != NULL)
  }
 
 receiver->reply = msg;
+assert(receiver->reason != rsNone);
 if(receiver->reason == rsReply)
  receiver->reason = rsNone;
 
@@ -100,7 +98,6 @@ if(hal->taskman->current->message->length != 0)
 delete hal->taskman->current->message;
 
 hal->taskman->current->message = next;
-hal->sti();
 
 return true;
 }

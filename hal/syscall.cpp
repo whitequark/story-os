@@ -17,16 +17,29 @@
 
 #include <syscall.h>
 #include <hal.h>
+#include <colors.h>
+#include <core.h>
 
-unsigned int syscall_schedule(Registers r)
+unsigned int syscall_stop(Registers r)
 {
+printf("%z*** STOP", BG_RED + WHITE);
+while(1);
+}
+
+unsigned int syscall_wait_procman(Registers r)
+{
+hal->taskman->current->reason = rsNotNULL;
+hal->taskman->current->wait_object = (unsigned int) &core->procman_initialized;
 hal->taskman->schedule();
-return 0;
+return 2;
 }
 
 extern "C" unsigned int syscall_handler(Registers r)
 {
-return hal->syscalls->invoke(r.eax, r);
+hal->cli();
+unsigned int p = hal->syscalls->invoke(r.eax, r);
+hal->sti();
+return p;
 }
 
 extern "C" void syscall();
@@ -35,6 +48,7 @@ asm(
 	".long 0\n"
 
 	"syscall:\n"
+	"cli\n"
 	"push %ebp\n"
 	"pushal\n"
 
@@ -66,7 +80,8 @@ asm(
 	"pop %ebp\n"
 	
 	"mov _syscall_return_value, %eax\n"
-
+	
+	"sti\n"
 	"iret\n"
 );
 
@@ -88,8 +103,9 @@ else
 
 SyscallManager::SyscallManager()
 {
-handlers = new SyscallHandler[0x100];
+handlers = new SyscallHandler[100];
 hal->idt->set_trap(0x31, &syscall, hal->sys_code, 3);
 
-add(0, &syscall_schedule);
+add(1, &syscall_stop);
+add(2, &syscall_wait_procman);
 }
