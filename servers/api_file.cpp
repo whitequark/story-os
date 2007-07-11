@@ -24,7 +24,6 @@ File::File(char* name)
 this->name = name;
 Procman p;
 fs_server = p.get_fs_server_tid();
-p.printf("fs server tid = %i\n", fs_server);
 }
 
 bool File::open()

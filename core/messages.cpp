@@ -24,38 +24,10 @@
 
 unsigned int syscall_send(Registers r)
 {
-Task* receiver = hal->taskman->task(r.esi);
-if(!receiver)
+if(!core->messenger->send(hal->taskman->current->index, (Message*) r.ebx))
  return false;
 
-CoreMessage* msg = new CoreMessage;
-msg->sender = hal->taskman->current->index;
-msg->type = r.ebx;
-msg->length = r.ecx;
-if(r.ecx != 0)
- {
- msg->data = malloc(msg->length);
- memcpy(msg->data, (void*) r.edx, msg->length);
- }
-else
- msg->data = NULL;
-
-if(receiver->message != NULL)
- {
- msg->next = receiver->message;
- receiver->message = msg;
- }
-else
- {
- msg->next = NULL;
- receiver->message = msg;
- }
-
-if(receiver->reason == rsMessage)
- receiver->reason = rsNone;
-
 hal->taskman->current->reason = rsReply;
-
 hal->taskman->schedule();
 
 return true;
@@ -111,7 +83,8 @@ msg->type = hal->taskman->current->message->type;
 msg->task = hal->taskman->current->message->sender;
 unsigned int length = 
 	msg->size < hal->taskman->current->message->length ? msg->size : hal->taskman->current->message->length;
-memcpy(msg->buffer, hal->taskman->current->message->data, length);
+if(length)
+ memcpy(msg->buffer, hal->taskman->current->message->data, length);
 msg->size = hal->taskman->current->message->length;
 return true;
 }
@@ -125,7 +98,8 @@ msg->type = hal->taskman->current->reply->type;
 msg->task = hal->taskman->current->reply->sender;
 unsigned int length = 
 	msg->size < hal->taskman->current->reply->length ? msg->size : hal->taskman->current->reply->length;
-memcpy(msg->buffer, hal->taskman->current->reply->data, length);
+if(length)
+ memcpy(msg->buffer, hal->taskman->current->reply->data, length);
 msg->size = hal->taskman->current->reply->length;
 return true;
 }
@@ -136,4 +110,40 @@ hal->syscalls->add(50, &syscall_send);
 hal->syscalls->add(51, &syscall_reply);
 hal->syscalls->add(52, &syscall_receive);
 hal->syscalls->add(53, &syscall_receive_reply);
+}
+
+bool CoreMessenger::send(unsigned int sender, Message* umsg)
+{
+Task* receiver = hal->taskman->task(umsg->task);
+if(!receiver)
+ return false;
+
+CoreMessage* msg = new CoreMessage;
+msg->sender = sender;
+msg->type = umsg->type;
+msg->length = umsg->size;
+
+if(umsg->size != 0)
+ {
+ msg->data = malloc(msg->length);
+ memcpy(msg->data, umsg->buffer, umsg->size);
+ }
+else
+ msg->data = NULL;
+
+if(receiver->message != NULL)
+ {
+ msg->next = receiver->message;
+ receiver->message = msg;
+ }
+else
+ {
+ msg->next = NULL;
+ receiver->message = msg;
+ }
+
+if(receiver->reason == rsMessage)
+ receiver->reason = rsNone;
+
+return true;
 }

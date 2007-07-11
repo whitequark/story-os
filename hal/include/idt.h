@@ -13,10 +13,38 @@ unsigned int   esp;
 unsigned int   ebp;
 } __attribute__((__packed__));
 
-#define IRQ_HANDLER(func) extern "C" void func (); void _i_ ## func () { asm(".globl " #func " \n " #func ": cli \n pusha \n call _" #func " \n movb $0x20, %al \n outb %al, $0x20 \n popa \n sti \n iret \n"); } extern "C" void _ ## func(void)
+#define IRQ_HANDLER(func) \
+ extern "C" void func (); \
+ void _i_ ## func () \
+ { asm(".globl " #func " \n " \
+ #func ": cli \n" \
+ " pusha \n" \
+ " call _" #func " \n" \
+ " movb $0x20, %al \n" \
+ " outb %al, $0x20 \n" \
+ " popa \n" \
+ " sti \n" \
+ " iret \n"); \
+ } \
+ extern "C" void _ ## func(void)
 
 //when irq>0x7 we need EOI both slave&master
-#define IRQ_HANDLER_HIGH(func) extern "C" void func (); void _i_ ## func () { asm(".globl " #func " \n " #func ": cli \n pusha \n call _" #func " \n movb $0x20, %al \n outb %al, $0x20 \n outb %al, $0xA0 \n popa \n sti \n iret \n"); } extern "C" void _ ## func(void)
+#define IRQ_HANDLER_HIGH(func) \
+ extern "C" void func (); \
+ void _i_ ## func () \
+ { \
+ asm(".globl " #func " \n " \
+ #func ": cli \n" \
+ " pusha \n" \
+ " call _" #func " \n" \
+ " movb $0x20, %al \n" \
+ " outb %al, $0x20 \n" \
+ " outb %al, $0xA0 \n" \
+ " popa \n" \
+ " sti \n" \
+ " iret \n"); \
+ } \
+ extern "C" void _ ## func(void)
 
 #define EXCEPTION_HANDLER(func) \
  extern "C" void func (unsigned int errcode); \

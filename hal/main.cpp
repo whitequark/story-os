@@ -131,6 +131,7 @@ hal->idt->register_irqs();
 
 hal->pic = new PIC;
 hal->pic->remap(0x20, 0x28);
+hal->pic->unmask(0);
 
 hal->syscalls = new SyscallManager();
 
@@ -150,7 +151,6 @@ printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
 
 core = new Core(multiboot_info);
 
-hal->pic->unmask(0);
 hal->sti();
 
 for(;;);

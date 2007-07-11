@@ -27,7 +27,7 @@
 bool Messenger::send(Message msg)
 {
 bool ret;
-asm("int $0x31":"=a"(ret):"a"(50),"b"(msg.type),"c"(msg.size),"d"(msg.buffer),"S"(msg.task));
+asm("int $0x31":"=a"(ret):"a"(50),"b"(&msg));
 return ret;
 }
 

@@ -42,6 +42,9 @@ msg.type = Procman::mtDelay;
 msg.size = sizeof(millis);
 msg.buffer = &millis;
 m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
 }
 
 void Procman::die(int code)
@@ -52,6 +55,9 @@ msg.type = Procman::mtDie;
 msg.size = sizeof(code);
 msg.buffer = &code;
 m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
 while(1);
 }
 
@@ -72,14 +78,30 @@ m.receive_reply(msg);
 return value;
 }
 
-void Procman::wait_for_irq(unsigned int irq)
+void Procman::attach_irq(unsigned int irq)
 {
 Message msg;
 msg.task = procman_tid;
-msg.type = Procman::mtWaitForIRQ;
+msg.type = Procman::mtAttachIRQ;
 msg.size = sizeof(irq);
 msg.buffer = &irq;
 m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
+}
+
+void Procman::detach_irq(unsigned int irq)
+{
+Message msg;
+msg.task = procman_tid;
+msg.type = Procman::mtDetachIRQ;
+msg.size = sizeof(irq);
+msg.buffer = &irq;
+m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
 }
 
 void* Procman::alloc_pages(unsigned int count)
@@ -123,6 +145,9 @@ msg.task = procman_tid;
 msg.type = Procman::mtWaitForMessage;
 msg.size = 0;
 m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
 }
 
 void Procman::printf(char* fmt, ...)
@@ -139,6 +164,9 @@ msg.type = 0xf;
 msg.size = 2000;
 msg.buffer = s;
 m.send(msg);
+
+msg.size = 0;
+m.receive_reply(msg);
 }
 
 unsigned int Procman::get_tid()

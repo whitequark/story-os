@@ -3,7 +3,7 @@ LIB=../lib/*.o
 API=../api/*.o
 SAPI=api_*.o
 
-all:	api_filesystem.o api_file.o fs.o fs
+all:	api_filesystem.o api_file.o keyboard.o keyboard fs.o fs
 
 %: %.o
 	@echo "Linking '$@'"

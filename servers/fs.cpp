@@ -23,6 +23,7 @@
 int main()
 {
 Procman p(true);
+Filesystem fs;
 Messenger m;
 
 Message msg;
@@ -43,14 +44,22 @@ while(1)
  msg.buffer = NULL;
  m.receive(msg);
  
+ bool ret;
+ 
  switch(msg.type)
   {
   case File::mtCreate:
+  msg.buffer = malloc(msg.size);
+  m.receive(msg);
+  ret = fs.add((char*) msg.buffer);
+  if(!ret)
+   reply.type = rtError;
+  m.reply(reply);
+  fs.show();
   break;
   
-  case File::mtResolve:
-  
-  default:
+  default: 
+  reply.type = rtError;
   m.reply(reply);
   }
  }

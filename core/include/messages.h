@@ -17,6 +17,7 @@ class CoreMessenger
 {
 public:
 CoreMessenger();
+bool send(unsigned int sender, Message* msg);
 };
 
 #endif

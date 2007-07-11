@@ -15,8 +15,6 @@ hal/include/gdt.h
 hal/include/stubs.h
 hal/idt.cpp
 hal/include/idt.h
-hal/include/pic.h
-hal/pic.cpp
 hal/include/mm.h
 hal/mm.cpp
 hal/include/task.h
@@ -68,3 +66,13 @@ lib/include/list.h
 hal/backtrace.cpp
 lib/vsprintf.cpp
 lib/include/vsprintf.h
+servers
+servers/api_file.cpp
+servers/api_filesystem.cpp
+servers/fs.cpp
+servers/include
+servers/include/file.h
+servers/include/filesystem.h
+servers/keyboard.cpp
+servers/Makefile
+servers/tty.cpp

@@ -142,11 +142,7 @@ return true;
 
 void TaskManager::process_irq(unsigned int number)
 {
-Task* t;
-int n;
-for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
- if(t->reason == rsIRQ && t->wait_object == number)
-  t->reason = rsNone;
+core->process_irq(number);
 }
 
 Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm)
@@ -224,10 +220,6 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
   printf(", waiting task %i to die", t->wait_object);
   break;
   
-  case rsIRQ:
-  printf(", waiting IRQ%i to appear", t->wait_object);
-  break;
-  
   case rsDelay:
   printf(", waiting %i milliseconds", t->wait_object);
   break;
@@ -264,6 +256,7 @@ current = new Task; //kernel task
 current->index = next_index++;
 current->pl = 0;
 current->priority = 0; //do not execute at all
+current->reason = rsDead;
 current->next = current;
 
 current->tss = new TSS;
@@ -289,6 +282,7 @@ task->pl = 0;
 task->priority = 0;
 task->vmm = NULL;
 task->next = current->next;
+task->reason = rsDead;
 current->next = task;
 
 unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);

@@ -21,14 +21,16 @@
 PIC::PIC()
 {
 int i;
-for(i = 0; i < 16; i++)
- mask(i);
+hal->outb(0x21, 0xFF);
+hal->outb(0xA1, 0xFF);
 }
 
 void PIC::remap(char v1, char v2)
 {
 v1 &= 0xF8;
 v2 &= 0xF8;
+unsigned char d1 = hal->inb(0x21);
+unsigned char d2 = hal->inb(0xA1);
 hal->outb(0x20, 0x11);
 hal->outb(0xA0, 0x11);
 hal->outb(0x21, v1);
@@ -37,36 +39,18 @@ hal->outb(0x21, 0x04);
 hal->outb(0xA1, 0x02);
 hal->outb(0x21, 0x01);
 hal->outb(0xA1, 0x01);
-hal->outb(0x21, 0x0);
-hal->outb(0xA1, 0x0);
+hal->outb(0x21, d1);
+hal->outb(0xA1, d2);
 }
 
 void PIC::mask(char n)
 {
-if(n > 15)
- hal->panic("PIC::mask(): n > 16!");
-if(n == 2)
- n = 9;
-bool second_pic = n > 7;
-if(second_pic)
- n -= 8;
-char byte = 1 << n;
-char port = second_pic ? 0xA1 : 0x21;
-char mask = hal->inb(port);
-mask = mask | byte;
-hal->outb(port, mask);
+unsigned char port = n > 7 ? 0xA1 : 0x21;
+hal->outb(port, hal->inb(port) | (1 << (n % 8)));
 }
 
 void PIC::unmask(char n)
 {
-if(n > 15)
- hal->panic("PIC::unmask(): n > 16!");
-bool second_pic = n > 7;
-if(second_pic)
- n -= 8;
-char byte = 1 << n;
-char port = second_pic ? 0xA1 : 0x21;
-char mask = hal->inb(port);
-mask = mask & (~byte);
-hal->outb(port, mask);
+unsigned char port = n > 7 ? 0xA1 : 0x21;
+hal->outb(port, hal->inb(port) & ~(1 << (n % 8)));
 }

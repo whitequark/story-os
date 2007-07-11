@@ -77,16 +77,6 @@ while(1)
   m.reply(reply); //TODO make reply with return code
   break;
   
-  case Procman::mtWaitForIRQ:
-  unsigned int irq;
-  msg.buffer = &irq;
-  msg.size = sizeof(irq);
-  m.receive(msg);
-  task->reason = rsIRQ;
-  task->wait_object = irq;
-  m.reply(reply);
-  break;
-  
   case Procman::mtAllocPages:
   unsigned int count;
   msg.buffer = &count;
@@ -120,7 +110,8 @@ while(1)
   break;
   
   case Procman::mtWaitForMessage:
-  task->reason = rsMessage;
+  if(task->message == NULL)
+   task->reason = rsMessage;
   m.reply(reply);
   break;
   
@@ -139,6 +130,15 @@ while(1)
   case Procman::mtGetFilesystemTID:
   reply.size = sizeof(fs_server_tid);
   reply.buffer = &fs_server_tid;
+  m.reply(reply);
+  break;
+  
+  case Procman::mtAttachIRQ:
+  unsigned int irq;
+  msg.buffer = &irq;
+  msg.size = sizeof(irq);
+  m.receive(msg);
+  core->attach_irq(irq, msg.task);
   m.reply(reply);
   break;
   

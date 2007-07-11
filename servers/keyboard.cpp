@@ -15,7 +15,10 @@
 //    with this program; if not, write to the Free Software Foundation, Inc.,
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#include <application.h>
+#include <procman.h>
+#include <mutex.h>
+#include <filesystem.h>
+#include <file.h>
 
 const char scancodes_shifted[] = {
   0,
@@ -113,112 +116,118 @@ asm("inb %w1, %b0": "=a"(value): "d"(port));
 return value;
 }
 
-int main()
+bool keystate[6], escaped = 0;
+const unsigned int LEFT_SHIFT = 0, RIGHT_SHIFT = 5, LEFT_ALT = 2, RIGHT_ALT = 3, LEFT_CTRL = 1, RIGHT_CTRL = 4;
+Mutex* locker;
+const unsigned int BUFFER_SIZE = 1000;
+char* buffer;
+unsigned int pointer;
+
+void fs_thread()
 {
-outb(0x21, 0);
-outb(0x60, 0xF4);
-while(inb(0x64) & 1)
- inb(0x60);
-
-bool leftctrl = 0, rightctrl = 0, leftshift = 0, rightshift = 0, leftalt = 0, rightalt = 0, escaped = 0;
-
-for(;;)
+Procman p;
+Messenger m;
+Filesystem fs;
+fs.add("/input");
+fs.add("/leds");
+fs.show();
+File keyboard("/dev/keyboard");
+//keyboard.
+keyboard.create();
+while(1)
  {
- if(inb(0x64) & 1)
+ p.wait_for_message();
+ 
+ Message msg, reply;
+ reply.size = 0;
+ reply.buffer = NULL;
+ reply.type = rtOk;
+ msg.size = 0; //after receive() size = real message size
+ msg.buffer = NULL;
+ m.receive(msg);
+ 
+ bool ret;
+ 
+ switch(msg.type)
   {
-  scancode = inb(0x60);
+  default:
+  reply.type = rtError;
+  m.reply(reply);
+  }
+ }
+}
 
-  int ascii = 0;
-  switch(scancode) 
+void process_scancode(unsigned char scancode)
+{
+Procman p;
+int ascii = 0;
+switch(scancode) 
+ {
+ case 0x2A:        keystate[LEFT_SHIFT] = true;    break;
+ case 0x2A + 0x80: keystate[LEFT_SHIFT] = false;   break;
+ case 0x36:        keystate[RIGHT_SHIFT] = true;   break;
+ case 0x36 + 0x80: keystate[RIGHT_SHIFT] = false;  break;
+ case 0xE0: escaped = true; break;
+  
+ default:
+ if(escaped)
+  {
+  switch(scancode)
    {
-   case 0x2A:
-   leftshift = true;
-   break;
- 
-   case 0x36: 
-   rightshift = true;
-   break;
- 
-   case 0x2A + 0x80:
-   leftshift = false;
-   break;
-   
-   case 0x36 + 0x80:
-   rightshift = false;
-   break;
-   
-   case 0xE0:
-   escaped = true;
-   break;
-   
+   case 0x1D:        keystate[RIGHT_CTRL] = true;  break;
+   case 0x1D + 0x80: keystate[RIGHT_CTRL] = false; break;
+   case 0x38:        keystate[RIGHT_ALT] = true;   break;
+   case 0x38 + 0x80: keystate[RIGHT_ALT] = false;  break;
+   }
+  escaped = false;
+  } 
+ else 
+  {
+  switch(scancode)
+   {
+   case 0x1D:        keystate[LEFT_CTRL] = true;   break;
+   case 0x1D + 0x80: keystate[LEFT_CTRL] = false;  break;
+   case 0x38:        keystate[LEFT_ALT] = true;    break;
+   case 0x38 + 0x80: keystate[LEFT_ALT] = false;   break;
+     
    default:
-   if(escaped)
-    {
-    switch(scancode)
-     {
-     case 0x48: //up arrow
-     break;
-
-     case 0x4B: //left arrow
-     break;
-
-     case 0x4D: //right arrow
-     break;
-
-     case 0x50: //down arrow
-     break;
-     
-     case 0x1D:
-     rightctrl = true;
-     break;
-
-     case 0x1D + 0x80:
-     rightctrl = false;
-     break;
-     
-     case 0x38:
-     rightalt = true;
-     break;
-
-     case 0x38 + 0x80:
-     rightalt = false;
-     break;
-     }
-    escaped = false;
-    } 
-   else 
-    {
-    switch(scancode)
-     {
-     case 0x1D:
-     leftctrl = true;
-     break;
-
-     case 0x1D + 0x80:
-     leftctrl = false;
-     break;
-     
-     case 0x38:
-     leftalt = true;
-     break;
-
-     case 0x38 + 0x80:
-     leftalt = false;
-     break;
-     
-     default:
-     if(scancode < 0x80)
-      {
-      if(leftshift || rightshift)
-       ascii = scancodes_shifted[scancode];
-      else
-       ascii = scancodes[scancode];
-      }
-     }
-    }
-   if(ascii != 0)
-;//    putchar(ascii);
+   if(scancode < 0x80)
+    if(keystate[LEFT_SHIFT] || keystate[RIGHT_SHIFT]) ascii = scancodes_shifted[scancode];
+    else                                              ascii = scancodes[scancode];
    }
   }
+ if(ascii != 0)
+  {
+  p.printf("%c", ascii);
+  buffer[pointer++] = ascii;
+  if(pointer == BUFFER_SIZE)
+   pointer = 0;
+  }
+ }
+}
+
+int main()
+{
+Procman p;
+Messenger m;
+
+outb(0x60, 0xF4); //recalibrate
+do { inb(0x60); } //empty buffer
+while(inb(0x64) & 1);
+
+locker = new Mutex;
+buffer = new char[BUFFER_SIZE];
+pointer = 0;
+
+p.create_thread((void*) &fs_thread);
+
+while(1)
+ {
+ while(!(inb(0x64) & 1));
+ 
+ unsigned char scancode = inb(0x60);
+ locker->lock();
+ process_scancode(scancode);
+ locker->unlock();
  }
 }

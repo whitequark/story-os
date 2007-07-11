@@ -21,6 +21,7 @@
 #include <hal.h>
 #include <messages.h>
 #include <vmm.h>
+#include <procman.h>
 
 Core* core;
 
@@ -28,6 +29,8 @@ Core::Core(multiboot_info_t* mbi)
 {
 printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 
+for(int i = 0; i < 16; i++)
+ IRQs[i] = NULL;
 messenger = new CoreMessenger;
 launch_procman();
 
@@ -59,7 +62,7 @@ if(mbi->mods_count > 0)
    }
   }
  }
-//else hal->panic("No modules detected!\n");
+else hal->panic("No modules detected!\n");
 
 if(errors_found) printf("%zErrors when loading modules!%z\n", RED, LIGHTGRAY);
 else             printf("%zLoaded successfully%z\n", GREEN, LIGHTGRAY);
@@ -153,4 +156,31 @@ VirtualMemoryManager* vmm = new VirtualMemoryManager(true);
 procman = hal->taskman->create_task(0, (unsigned int) &process_manager, 1, vmm);
 procman->tss->eflags |= 0x3000;
 procman_initialized = false;
+}
+
+void Core::process_irq(unsigned int irq)
+{
+if(irq == 7)
+ return;
+List<unsigned int>* i;
+if(IRQs[irq])
+ iterate_list(i, IRQs[irq])
+  {
+  Message msg;
+  msg.type = Procman::mtIRQFired;
+  msg.task = i->item;
+  msg.buffer = &irq;
+  msg.size = sizeof(irq);
+  messenger->send(0, &msg);
+  }
+}
+
+void Core::attach_irq(unsigned int irq, unsigned int task)
+{
+if(irq > 15)
+ return;
+if(IRQs[irq] == NULL)
+ IRQs[irq] = new List<unsigned int>(task);
+else
+ IRQs[irq]->add_tail(new List<unsigned int>(task));
 }

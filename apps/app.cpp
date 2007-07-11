@@ -16,9 +16,8 @@
 //    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 #include <file.h>
+#include <procman.h>
 
 int main()
 {
-File hda("/dev/hda");
-hda.create();
 }
