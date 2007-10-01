@@ -75,7 +75,7 @@ bytes[3] = (base & 0x0000FF00) >> 8;
 bytes[4] = (base & 0x00FF0000) >> 16;
 bytes[7] = (base & 0xFF000000) >> 24;
 
-bytes[5] =  0x89;
+bytes[5] = 0x89;
 bytes[6] = 0;
 }
 
@@ -115,17 +115,19 @@ return count - 1;
 
 void GDT::modify_descriptor(GDTDescriptor* desc, unsigned short number)
 {
+hal->cli_c();
 char* bytes = desc->get_bytes();
-hal->cli_c(); //this must be ATOMIC operation
 memcpy((void*) ((unsigned int) gdt + 8*number), bytes, 8);
 hal->sti_c();
 }
 
 void GDT::install()
 {
+hal->cli_c();
 _gdt_register.limit = count * 8;
 _gdt_register.address = (unsigned int) &gdt;
 asm("lgdt _gdt_register\n");
+hal->sti_c();
 
 installed = true;
 //If gdt is already installed, adding a descriptor MUST cause a reinstall(limit updating)

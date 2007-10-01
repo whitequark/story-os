@@ -4,6 +4,7 @@
 #include <story.h>
 #include <vmm.h>
 #include <gdt.h>
+#include <list.h>
 #include <messages.h>
 
 #define PL0_STACK_SIZE 2
@@ -47,14 +48,15 @@ unsigned int   esi;
 unsigned int   edi;
 } __attribute__((__packed__)) Registers;
 
-typedef enum { rsNone, rsDead, rsTaskDie, rsIRQ, rsDelay, rsMessage, rsReply, rsNotNULL } WaitingReason;
+typedef enum { wrNone, wrDead, wrTaskDie, wrIRQ, wrDelay, wrMessage, wrReply, wrNotNULL } WaitReason;
+typedef enum { rrOk, rrInterrupted } ResumeReason;
 
 /*
 PL's:
  0   = Kernel
  1   = System
  2   = Root
- 3-x = User
+ 3   = User
 */
 
 class Task
@@ -73,10 +75,11 @@ unsigned int priority;
 void* image;
 VirtualMemoryManager* vmm;
 
-CoreMessage* message;
-CoreMessage* reply;
+List<Message*>* messages;
+Message* reply;
 
-WaitingReason reason;
+WaitReason wait_reason;
+ResumeReason resume_reason;
 unsigned int wait_object;
 };
 
@@ -98,7 +101,7 @@ void run_task(Task* task);
 public:
 Task* current;
 TaskManager();
-bool kill(unsigned int index, unsigned int return_code = 1); // 0=OK 1=GenericError 2-x=User accessible
+bool kill(unsigned int index, unsigned int return_code = 1);
 void process_irq(unsigned int number);
 void scheduler();
 Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm);

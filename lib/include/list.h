@@ -1,8 +1,6 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-//idea from FOS (Legos)
-
 #include <story.h>
 
 template<class T> class List
@@ -17,10 +15,16 @@ List(T _item) : item(_item), next(NULL), prev(NULL)
  }
 ~List()
  {
+ remove();
+ }
+void remove()
+ {
  if(this->next)
   this->next->prev = this->prev;
  if(this->prev)
   this->prev->next = this->next;
+ this->next = NULL;
+ this->prev = NULL;
  }
 void add_after(List<T>* elem)
  {

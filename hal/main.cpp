@@ -22,6 +22,7 @@
 #include <hal.h>
 #include <colors.h>
 #include <core.h>
+#include <string.h>
 
 /*
 				MEMORY MAP
@@ -39,7 +40,7 @@
 	000C 0000-000C 7FFF		VGA BIOS					32K
 	000F 0000-000F FFFF		Motherboard BIOS				64K
 
-				All my stuff: begins @ 1M
+				All my stuff: begins at 1M
 0010 0000-FEBF FFFF			Extended memory
 	0010 0000-001F FFFF		GRUB
 	0020 0000-003F FFFF		Kernel & modules				4M
@@ -97,7 +98,53 @@ if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
 printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
-printf("Thanks to Legos, DinamytE, SadKo.\n\n");
+printf("Thanks to Legos, DinamytE, SadKo and all OSDev.ru community.\n\n");
+
+/*for(int i = 0; i < 8; i++)
+ {
+ for(int j = 0; j < 16; j++)
+  hal->terminal->put_char_raw(i * 32 + j, GREEN);
+ printf(" | ");
+ for(int j = 16; j < 32; j++)
+  hal->terminal->put_char_raw(i * 32 + j, GREEN);
+ printf("\n");
+ }
+
+for(int i = 0; i < 8; i++)
+ {
+ for(int j = 0; j < 16; j++)
+  hal->terminal->put_char_raw(i * 32 + j, GREEN | 8);
+ printf(" | ");
+ for(int j = 16; j < 32; j++)
+  hal->terminal->put_char_raw(i * 32 + j, GREEN | 8);
+ printf("\n");
+ }
+
+hal->outw(0x3c4, 0x0100); //sync reset
+hal->outw(0x3c4, 0x0402); //write plane 2
+hal->outw(0x3c4, 0x0704); //sequential addressing
+hal->outw(0x3c4, 0x0300); //clear reset
+
+hal->outw(0x3ce, 0x0204); //read plane 2
+hal->outw(0x3ce, 0x0005); //disable odd-even addressing
+hal->outw(0x3ce, 0x0006); //start map at 0xA0000
+
+int symbol_height = 16, symbol, table = 2;
+
+memcpy((void*) (0xa0000 + symbol_height * 256 * 2 * table), (void*) 0xa0000, 256 * 2 * symbol_height);
+
+for(int i = 0xa0000 + 256 * 2 * table * symbol_height + 2 * symbol_height; i < 0xa0000 + 256 * 2 * table * symbol_height + 2 * 256 * symbol_height; i++)
+  *((char*) i) = *((char*) ((i - 256 * 2 * table * symbol_height) / symbol_height * symbol_height) + 15 - (i - 256 * 2 * table * symbol_height) % symbol_height);
+
+hal->outw(0x3c4, 0x0100); //sync reset
+hal->outw(0x3c4, 0x0302); //write planes 0&1
+hal->outw(0x3c4, 0x0304); //odd-even addressing
+hal->outw(0x3c4, 0x0403); //symbol tables D3=0 -> 0, D3=1 -> 1
+hal->outw(0x3c4, 0x0300); //clear reset
+
+hal->outw(0x3ce, 0x0004); //read map 0
+hal->outw(0x3ce, 0x1005); //enable odd-even addressing
+hal->outw(0x3ce, 0x0E06); //start map at 0xB8000*/
 
 printf("%zInitializing HAL...%z ", GREEN, LIGHTGRAY);
 

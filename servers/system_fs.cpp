@@ -22,14 +22,9 @@
 void init_mallocator();
 int main();
 
-File* stdin;
-File* stdout;
-
 extern "C" void _start()
 {
 init_mallocator();
-stdout = new File("/dev/tty");
-stdin = new File("/dev/null");
 die(main());
 }
 
@@ -67,25 +62,14 @@ RSYSCALL0(SYSCALL_GET_TID, tid);
 return tid;
 }
 
-unsigned int start_thread(void(*address)())
-{
-Message m = {0};
-m.receiver = PROCMAN_TID;
-m.type = pcStartThread;
-m.value1 = (unsigned int) address;
-send(m);
-return m.value1;
-}
-
 void printf(char* fmt, ...)
 {
-char buf[1024];
-va_list list;
+/*va_list list;
 va_start(list, fmt);
+char buf[1000] = {0};
 vsprintf(buf, fmt, list);
 va_end(list);
-while(stdout->resolve() != frOk || stdout->is_mounted() == false);
-stdout->write(buf, strlen(buf) + 1);
+SYSCALL1(2, buf);*/
 }
 
 int send(Message& msg)

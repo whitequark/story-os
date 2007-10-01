@@ -21,7 +21,7 @@
 
 void register_exceptions();
 
-char* exception_names[20] = {
+const char* exception_names[20] = {
 "Division By Zero",
 "Debug",
 "Non Maskable Interrupt",
@@ -46,7 +46,7 @@ char* exception_names[20] = {
 
 void common_exception_handler(int number, int address, int errcode, HRegisters r)
 {
-hal->cli();
+hal->cli_c();
 unsigned int cr2;
 asm("mov %%cr2, %0":"=d"(cr2));
 printf("\n    %zException Occured (Task %i)!%z", YELLOW, hal->taskman->current->index, LIGHTGRAY); 
@@ -64,6 +64,7 @@ if(number == 0x0E)
  if(errcode & 4)	printf(" at level %z3%z, ", LIGHTBLUE, LIGHTGRAY);
  else			printf(" at level %z0%z, ", LIGHTBLUE, LIGHTGRAY);
  printf("address %z%X%z", LIGHTGREEN, cr2, LIGHTGRAY);
+ printf("\n    ESP: %X", r.esp);
  }
 if(hal->taskman->current->index == 0)
  {
@@ -80,7 +81,7 @@ else
  hal->taskman->current->vmm->show();
  if(number == 0x0E)
   {
-  user_backtrace();
+  //user_backtrace();
 /*  int index = hal->taskman->current->index;
   hal->taskman->kill(hal->taskman->current->index, 1);
   hal->sti();*/

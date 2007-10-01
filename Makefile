@@ -1,17 +1,16 @@
-#ipc.o for procman
 OBJDIRS=hal lib core
-FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o) api/ipc.o
+FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)
 VERSION=0.48
 
 all:
-	@echo "WARNING: If it does not compile, check path in template.mk!"
+	@echo "WARNING: If it does not compile, check $(ROOT) in template.mk"
 	@make -C hal
 	@make -C core
 	@make -C lib
 	@make -C api
 	@make -C servers
 	@make -C apps
-	@echo "Linking kernel"
+	@echo "  Linking        kernel"
 	@ld -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386
 	
 	@expr `cat .build` + 1 > .build

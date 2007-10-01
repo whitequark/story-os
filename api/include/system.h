@@ -2,37 +2,56 @@
 #define _SYSTEM_H_
 
 #include <story.h>
+#include <messages.h>
+#include <file.h>
 
-//  xchg() взят из linux-2.6.17
+#define SYSCALL0(n) asm("int $0x31"::"a"(n))
+#define SYSCALL1(n, p1) asm("int $0x31"::"a"(n),"b"(p1))
+#define SYSCALL2(n, p1, p2) asm("int $0x31"::"a"(n),"b"(p1),"c"(p2))
+#define SYSCALL3(n, p1, p3) asm("int $0x31"::"a"(n),"b"(p1),"c"(p2),"d"(p3))
+#define RSYSCALL0(n, ret) asm("int $0x31":"=a"(ret):"a"(n))
+#define RSYSCALL1(n, ret, p1) asm("int $0x31":"=a"(ret):"a"(n),"b"(p1))
+#define RSYSCALL2(n, ret, p1, p2) asm("int $0x31":"=a"(ret):"a"(n),"b"(p1),"c"(p2))
+#define RSYSCALL3(n, ret, p1, p3) asm("int $0x31":"=a"(ret):"a"(n),"b"(p1),"c"(p2),"d"(p3))
 
-struct __xchg_dummy { unsigned long a[100]; };
-#define __xg(x) ((struct __xchg_dummy *)(x))
+#define MSG_OK 0
+#define MSG_ERROR 1
+#define MSG_INTERRUPTED 2
 
-#define xchg(ptr,v) ((__typeof__(*(ptr)))__xchg((unsigned long)(v),(ptr),sizeof(*(ptr))))
+#define PROCMAN_TID 2
 
-static inline unsigned long __xchg(unsigned long x, volatile void * ptr, int size)
-{
-  switch (size) {
-  case 1:
-    __asm__ __volatile__("xchgb %b0,%1"
-			 :"=q" (x)
-			 :"m" (*__xg(ptr)), "0" (x)
-			 :"memory");
-    break;
-  case 2:
-    __asm__ __volatile__("xchgw %w0,%1"
-			 :"=r" (x)
-			 :"m" (*__xg(ptr)), "0" (x)
-			 :"memory");
-    break;
-  case 4:
-    __asm__ __volatile__("xchgl %0,%1"
-			 :"=r" (x)
-			 :"m" (*__xg(ptr)), "0" (x)
-			 :"memory");
-    break;
-  }
-  return x;
-}
+#define SYSCALL_GET_TID 1
+
+typedef enum { pcMorecore, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread } ProcmanCommands;
+
+/*
+all buffers may be NULL, but only when _length is also 0
+
+need for send:
+ receiver, receiver != sender
+need for receive:
+ data, data_length
+can read after receive:
+ type, valueX, sender, data, data_length, data_received
+need for reply:
+ reply, reply_length
+can read after reply:
+ type, valueX, sender, reply, reply_length, data_received, reply_sent
+need for forward:
+ receiver
+*/
+
+int send(Message& msg);
+int receive(Message& msg);
+int reply(Message& msg);
+int forward(Message& msg);
+
+void die(int return_code);
+unsigned int get_tid();
+void printf(char* fmt, ...);
+unsigned int start_thread(void(*address)());
+
+extern File* stdin;
+extern File* stdout;
 
 #endif

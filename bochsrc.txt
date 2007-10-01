@@ -13,7 +13,7 @@ ata0-master: type=cdrom, path="disk.iso", status=inserted, biosdetect=auto, mode
 ata1: enabled=0
 ata2: enabled=0
 ata3: enabled=0
-parport1: enabled=0, file=""
+parport1: enabled=0
 parport2: enabled=0
 com1: enabled=0, mode=null, dev=""
 com2: enabled=0
@@ -23,7 +23,7 @@ usb1: enabled=0
 i440fxsupport: enabled=0
 vga_update_interval: 40000
 vga: extension=vbe
-cpu: count=1, ips=1000000, reset_on_triple_fault=1
+cpu: count=1, ips=1000000, reset_on_triple_fault=0
 text_snapshot_check: enabled=0
 private_colormap: enabled=0
 clock: sync=none, time0=local

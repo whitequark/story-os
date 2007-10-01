@@ -34,11 +34,11 @@ while(1)
   do 
    {
    current = current->next; 
-   if(current->reason == rsNotNULL)
+   if(current->wait_reason == wrNotNULL)
     if(*((unsigned int*) current->wait_object) != 0)
-     current->reason = rsNone;
+     current->wait_reason = wrNone;
    }
-  while(current->reason != rsNone || current->priority == 0);
+  while(current->wait_reason != wrNone || current->priority == 0);
   unsigned int newi = current->index;
   //printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
   scheduler_running = false;
@@ -71,11 +71,11 @@ hal->clock->tick();
 int n;
 Task* t;
 for(n = 0, t = hal->taskman->current; t != hal->taskman->current || n == 0; n++, t = t->next)
- if(t->reason == rsDelay)
+ if(t->wait_reason == wrDelay)
   {
   t->wait_object--;
-  if(t->wait_object <= 0)
-   t->reason = rsNone;
+  if(t->wait_object == 0)
+   t->wait_reason = wrNone;
   }
 
 hal->outb(0x20, 0x20);
@@ -98,7 +98,7 @@ asm(
 	"mov %ax,%ds\n"
 	"mov %ax,%es\n"
 
-	"movw 40(%esp), %ax\n" /* сохраним cs */
+	"movw 40(%esp), %ax\n" /* О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ cs */
 	"push %ax\n"
 	"call timer_handler\n"
 	"add $2, %esp\n"
@@ -116,23 +116,10 @@ if(index == current->index)
  t = current;
 else
  for(t = current->next; t->index != index && t != current; t = t->next); //find task with our index
-if(current->pl > t->pl) 
+if(t->index != index) 
  return false;
 
-//core->messenger->clear();
-
-//find and continue all waiting tasks TODO
-/*for(r = current->next; r != current; r = r->next)
- if(r->reason == rsTaskDie && r->wait_object == index)
-  {
-  r->reason = rsNone;
-  r->reply->length = 4;
-  r->reply->data = malloc(4);
-  unsigned int* n = (unsigned int*) r->reply->data;
-  *n = return_code;
-  }*/
-
-t->reason = rsDead;
+t->wait_reason = wrDead;
 
 if(t->vmm->change_threads(-1) == 0)
  delete t->vmm;
@@ -147,6 +134,7 @@ core->process_irq(number);
 
 Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm)
 {
+hal->cli_c();
 Task* task = new Task;
 task->index = next_index++;
 task->pl = pl;
@@ -190,10 +178,11 @@ task->tss->gs = 0;
 task->tss->ldt = 0;
 task->tss->iomap = 0;
 
-task->message = NULL;
+task->messages = NULL;
 task->reply = NULL;
 
 task->descriptor = new TSSDescriptor((unsigned int)task->tss);
+hal->sti_c();
 
 return task;
 }
@@ -206,33 +195,33 @@ printf("Remaining ticks: %i\n", ticks_remaining);
 for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
  {
  printf("Task %i: pl = %i", t->index, t->pl);
- switch(t->reason)
+ switch(t->wait_reason)
   {
-  case rsNone:
+  case wrNone:
   printf(", ready to run");
   break;
   
-  case rsDead:
+  case wrDead:
   printf(", dead");
   break;
   
-  case rsTaskDie:
+  case wrTaskDie:
   printf(", waiting task %i to die", t->wait_object);
   break;
   
-  case rsDelay:
+  case wrDelay:
   printf(", waiting %i milliseconds", t->wait_object);
   break;
   
-  case rsMessage:
+  case wrMessage:
   printf(", waiting for message");
   break;
   
-  case rsReply:
+  case wrReply:
   printf(", waiting for reply");
   break;
   
-  case rsNotNULL:
+  case wrNotNULL:
   printf(", waiting for 0x%X became not null", t->wait_object);
   break;
   
@@ -256,7 +245,7 @@ current = new Task; //kernel task
 current->index = next_index++;
 current->pl = 0;
 current->priority = 0; //do not execute at all
-current->reason = rsDead;
+current->wait_reason = wrDead;
 current->next = current;
 
 current->tss = new TSS;
@@ -282,7 +271,7 @@ task->pl = 0;
 task->priority = 0;
 task->vmm = NULL;
 task->next = current->next;
-task->reason = rsDead;
+task->wait_reason = wrDead;
 current->next = task;
 
 unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);

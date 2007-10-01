@@ -1,149 +1,204 @@
-//    This file is part of the Story OS
-//    Copyright (C) 2007  Peter Zotov
-//
-//    Story OS is free software; you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation; either version 2 of the License, or
-//    (at your option) any later version.
-//
-//    Story OS is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License along
-//    with this program; if not, write to the Free Software Foundation, Inc.,
-//    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-#include <hal.h>
 #include <messages.h>
-#include <story.h>
+#include <hal.h>
+#include <list.h>
 #include <string.h>
-#include <core.h>
-#include <assert.h>
 
-unsigned int syscall_send(Registers r)
+unsigned int syscall_message_send(Registers r)
 {
-if(!core->messenger->send(hal->taskman->current->index, (Message*) r.ebx))
- return false;
-
-hal->taskman->current->reason = rsReply;
+hal->cli_c();
+Message *msg = ((Message*)r.ebx);
+if(msg == NULL)
+ return MSG_ERROR;
+Task* dest = hal->taskman->task(msg->receiver);
+Task* curr = hal->taskman->current;
+if(dest == NULL || dest->wait_reason == wrDead)
+ return MSG_ERROR;
+if((msg->data == NULL && msg->data_length != 0) ||
+   (msg->data != NULL && msg->data_length == 0) ||
+   (msg->reply == NULL && msg->reply_length != 0) ||
+   (msg->reply != NULL && msg->reply_length == 0))
+ return MSG_ERROR;
+msg->sender = curr->index;
+if(msg->sender == msg->receiver)
+ return MSG_ERROR;
+//passed checks
+Message* cmsg = new Message(*msg);
+if(msg->data_length != 0)
+ {
+ cmsg->data = new char[msg->data_length];
+ memcpy(cmsg->data, msg->data, msg->data_length);
+ }
+if(msg->reply_length != 0)
+ cmsg->reply = new char[msg->reply_length];
+if(dest->messages == NULL)
+ dest->messages = new List<Message*>(cmsg);
+else
+ dest->messages->add_tail(new List<Message*>(cmsg));
+if(dest->wait_reason == wrMessage)
+ {
+ dest->wait_reason = wrNone;
+ dest->resume_reason = rrOk;
+ }
+hal->taskman->current->wait_reason = wrReply;
 hal->taskman->schedule();
 
-return true;
+//got reply
+Message* reply = curr->reply;
+msg->type = reply->type;
+msg->value1 = reply->value1;
+msg->value2 = reply->value2;
+msg->data_received = reply->data_received;
+msg->reply_sent = reply->reply_sent;
+msg->sender = reply->sender;
+if(msg->reply_length != 0)
+ memcpy(msg->reply, reply->reply, msg->reply_length);
+
+delete reply;
+
+hal->sti_c();
+return MSG_OK;
 }
 
-unsigned int syscall_reply(Registers r)
+unsigned int syscall_message_receive(Registers r)
 {
-Task* receiver = hal->taskman->task(hal->taskman->current->message->sender);
-if(!receiver)
- return false;
-
-CoreMessage* msg = new CoreMessage;
-msg->sender = hal->taskman->current->index;
-msg->type = r.ebx;
-msg->length = r.ecx;
-if(r.ecx != 0)
+hal->cli_c();
+Task* curr = hal->taskman->current;
+if(curr->messages == NULL)
  {
- msg->data = malloc(msg->length);
- memcpy(msg->data, (void*) r.edx, msg->length);
+ curr->wait_reason = wrMessage;
+ hal->taskman->schedule();
+ curr = hal->taskman->current;
+ if(curr->resume_reason != rrOk)
+  return MSG_INTERRUPTED;
  }
-else
- msg->data = NULL;
+//got message at this point
 
-if(receiver->reply != NULL)
- {
- if(receiver->reply->length != 0)
-  free(receiver->reply->data);
- delete receiver->reply;
- }
+Message *msg = curr->messages->item, *umsg = (Message*) r.ebx;
+if(umsg == NULL)
+ return MSG_ERROR;
 
-receiver->reply = msg;
-assert(receiver->reason != rsNone);
-if(receiver->reason == rsReply)
- receiver->reason = rsNone;
+umsg->type = msg->type;
+umsg->value1 = msg->value1;
+umsg->value2 = msg->value2;
+umsg->sender = msg->sender;
+if(umsg->data_length != 0 && msg->data_length != 0)
+ memcpy(umsg->data, msg->data, umsg->data_length);
+umsg->data_received = msg->data_length;
+msg->data_received = umsg->data_length;
+umsg->reply_length = msg->reply_length;
 
-CoreMessage* next = hal->taskman->current->message->next;
-
-if(hal->taskman->current->message->length != 0)
- free(hal->taskman->current->message->data);
-delete hal->taskman->current->message;
-
-hal->taskman->current->message = next;
-
-return true;
+hal->sti_c();
+return MSG_OK;
 }
 
-unsigned int syscall_receive(Registers r)
+unsigned int syscall_message_reply(Registers r)
 {
-if(hal->taskman->current->message == NULL)
- return false;
-Message* msg = (Message*) r.ebx;
-msg->type = hal->taskman->current->message->type;
-msg->task = hal->taskman->current->message->sender;
-unsigned int length = 
-	msg->size < hal->taskman->current->message->length ? msg->size : hal->taskman->current->message->length;
-if(length)
- memcpy(msg->buffer, hal->taskman->current->message->data, length);
-msg->size = hal->taskman->current->message->length;
-return true;
-}
-
-unsigned int syscall_receive_reply(Registers r)
-{
-if(hal->taskman->current->reply == NULL)
- return false;
-Message* msg = (Message*) r.ebx;
-msg->type = hal->taskman->current->reply->type;
-msg->task = hal->taskman->current->reply->sender;
-unsigned int length = 
-	msg->size < hal->taskman->current->reply->length ? msg->size : hal->taskman->current->reply->length;
-if(length)
- memcpy(msg->buffer, hal->taskman->current->reply->data, length);
-msg->size = hal->taskman->current->reply->length;
-return true;
-}
-
-CoreMessenger::CoreMessenger()
-{
-hal->syscalls->add(50, &syscall_send);
-hal->syscalls->add(51, &syscall_reply);
-hal->syscalls->add(52, &syscall_receive);
-hal->syscalls->add(53, &syscall_receive_reply);
-}
-
-bool CoreMessenger::send(unsigned int sender, Message* umsg)
-{
-Task* receiver = hal->taskman->task(umsg->task);
-if(!receiver)
- return false;
-
-CoreMessage* msg = new CoreMessage;
-msg->sender = sender;
+hal->cli_c();
+Task* curr = hal->taskman->current;
+Message *msg = curr->messages->item, *umsg = (Message*) r.ebx;
+Task* dest = hal->taskman->task(msg->sender);
+if(umsg == NULL)
+ return MSG_ERROR;
+if((umsg->reply == NULL && umsg->reply_length != 0) ||
+   (umsg->reply != NULL && umsg->reply_length == 0))
+ return MSG_ERROR;
 msg->type = umsg->type;
-msg->length = umsg->size;
+msg->value1 = umsg->value1;
+msg->value2 = umsg->value2;
+msg->sender = curr->index;
+msg->reply_sent = umsg->reply_length;
+if(umsg->reply_length != 0 && msg->reply_length != 0)
+ memcpy(msg->reply, umsg->reply, msg->reply_length > umsg->reply_length ? msg->reply_length : umsg->reply_length);
+dest->reply = msg;
+if(dest->wait_reason == wrReply)
+ dest->wait_reason = wrNone;
 
-if(umsg->size != 0)
+//advance
+List<Message*>* next = curr->messages->next;
+delete curr->messages;
+curr->messages = next;
+
+hal->sti_c();
+return MSG_OK;
+}
+
+unsigned int syscall_message_forward(Registers r)
+{
+hal->cli_c();
+Task* curr = hal->taskman->current;
+Message *umsg = (Message*) r.ebx;
+List<Message*>* cmsg = curr->messages;
+if(umsg == NULL)
+ return MSG_ERROR;
+Task* dest = hal->taskman->task(umsg->receiver);
+if(dest == NULL)
+ return MSG_ERROR;
+if((umsg->data == NULL && umsg->data_length != 0) ||
+   (umsg->data != NULL && umsg->data_length == 0))
+ return MSG_ERROR;
+
+cmsg->item->receiver = umsg->receiver;
+cmsg->item->type = umsg->type;
+cmsg->item->value1 = umsg->value1;
+cmsg->item->value2 = umsg->value2;
+cmsg->item->data_length = umsg->data_length;
+delete[] cmsg->item->data;
+if(cmsg->item->data_length != 0)
  {
- msg->data = malloc(msg->length);
- memcpy(msg->data, umsg->buffer, umsg->size);
+ cmsg->item->data = new char[cmsg->item->data_length];
+ memcpy(cmsg->item->data, umsg->data, cmsg->item->data_length);
  }
+
+List<Message*>* next = cmsg->next;
+cmsg->remove();
+curr->messages = next;
+
+if(dest->messages != NULL)
+ dest->messages->add_tail(cmsg);
 else
- msg->data = NULL;
-
-if(receiver->message != NULL)
+ dest->messages = cmsg;
+if(dest->wait_reason == wrMessage)
  {
- msg->next = receiver->message;
- receiver->message = msg;
- }
-else
- {
- msg->next = NULL;
- receiver->message = msg;
+ dest->wait_reason = wrNone;
+ dest->resume_reason = rrOk;
  }
 
-if(receiver->reason == rsMessage)
- receiver->reason = rsNone;
+hal->sti_c();
+return MSG_OK;
+}
 
-return true;
+Messenger::Messenger()
+{
+hal->syscalls->add(SYSCALL_SEND, &syscall_message_send);
+hal->syscalls->add(SYSCALL_RECEIVE, &syscall_message_receive);
+hal->syscalls->add(SYSCALL_REPLY, &syscall_message_reply);
+hal->syscalls->add(SYSCALL_FORWARD, &syscall_message_forward);
+}
+
+int send(Message& msg)
+{
+int ret;
+RSYSCALL1(SYSCALL_SEND, ret, &msg);
+return ret;
+}
+
+int receive(Message& msg)
+{
+int ret;
+RSYSCALL1(SYSCALL_RECEIVE, ret, &msg);
+return ret;
+}
+
+int reply(Message& msg)
+{
+int ret;
+RSYSCALL1(SYSCALL_REPLY, ret, &msg);
+return ret;
+}
+
+int forward(Message& msg)
+{
+int ret;
+RSYSCALL1(SYSCALL_FORWARD, ret, &msg);
+return ret;
 }

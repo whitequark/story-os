@@ -3,7 +3,8 @@ timeout 1
 title Story OS
 	root (cd)
 	kernel /kernel
-	module /keyboard
-	module /app
+        module /app
 	module /fs
-
+	module /tty
+	module /null
+	module /keyboard

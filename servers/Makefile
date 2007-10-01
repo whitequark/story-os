@@ -1,11 +1,5 @@
 include ../template.mk
-LIB=../lib/*.o
-API=../api/*.o
-SAPI=api_*.o
 
-all:	api_filesystem.o api_file.o keyboard.o keyboard fs.o fs
-
-%: %.o
-	@echo "Linking '$@'"
-	@ld -nostdlib -Ttext 0x10000000 $< $(LIB) $(API) $(SAPI) -o ../output/$@ --oformat elf32-i386
-	
+all:	api_file.o system_fs.o fs.o tty.o tty null.o null keyboard.o keyboard
+	@echo "  Linking [CUST]  fs"
+	@ld -nostdlib -Ttext 0x10000000 $(LIB) $(ROOT)/api/stubs.o $(ROOT)/api/assert.o system_fs.o fs.o -o $(ROOT)/output/fs --oformat elf32-i386

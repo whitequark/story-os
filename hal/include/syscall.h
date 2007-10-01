@@ -3,7 +3,7 @@
 
 #include <task.h>
 
-#define INVALID_SYSCALL 0xDEADBEEF
+#define INVALID_SYSCALL 0xFFFFFFFF
 
 typedef unsigned int (* SyscallHandler) (Registers);
 

@@ -177,6 +177,30 @@ void KernelTerminal::set_color(unsigned char color)
 this->color = color;
 }
 
+void KernelTerminal::put_char_raw(unsigned char ch, unsigned char color)
+{
+lfb[(cursorx++) + cursory * 80] = color << 8 | ch;
+if(cursorx == 80)
+ {
+ cursorx = 0;
+ cursory++;
+ }
+if(cursory == 25)
+ {
+ cursory = 24;
+ cursorx = 0;
+ memcpy(lfb, lfb + 80, 24*80*2);
+ for(int i = 80*24; i < 80*25; i++)
+  lfb[i] = 0x0700;
+ }
+unsigned short offset = cursorx + cursory * 80;
+hal->outb(VGA_CRT_IC, 0x0f);
+hal->outb(VGA_CRT_DC, offset & 0xff);
+offset >>= 8;
+hal->outb(VGA_CRT_IC, 0x0e);
+hal->outb(VGA_CRT_DC, offset & 0xff);
+}
+
 void putchar(char ch)
 {
 hal->terminal->put_char(ch);

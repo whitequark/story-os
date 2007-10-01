@@ -19,9 +19,8 @@
 #include <colors.h>
 #include <string.h>
 #include <hal.h>
-#include <messages.h>
 #include <vmm.h>
-#include <procman.h>
+#include <messages.h>
 
 Core* core;
 
@@ -29,9 +28,7 @@ Core::Core(multiboot_info_t* mbi)
 {
 printf("%zInitializing CORE...%z ", GREEN, LIGHTGRAY);
 
-for(int i = 0; i < 16; i++)
- IRQs[i] = NULL;
-messenger = new CoreMessenger;
+messenger = new Messenger;
 launch_procman();
 
 printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
@@ -75,20 +72,13 @@ Task* Core::load_executable(unsigned int start, unsigned int size, char* command
 {
 unsigned char* file = (unsigned char*) start;
 if(file[0] == 0x7f && file[1] == 'E' && file[2] == 'L' && file[3] == 'F')
- {
- #ifdef _DEBUGGING_EXECUTABLE_LOADER_
- printf("\nload_executable: ELF detected\n");
- #endif
  return load_elf(start, size);
- }
 else if(file[0] == 'M' && file[1] == 'Z')
  {
  printf("\nload_executable: PE not supported\n");
  return NULL;
  }
-#ifdef _DEBUGGING_EXECUTABLE_LOADER_
 printf("\nload_executable: wrong file format\n");
-#endif
 return NULL;
 }
 
@@ -150,29 +140,63 @@ task->image = (void*) start;
 return task;
 }
 
+void process_manager()
+{
+unsigned int namer_tid = 0;
+while(1)
+ {
+ Message msg = {0};
+ receive(msg);
+ 
+ Task* sender = hal->taskman->task(msg.sender);
+ 
+ switch(msg.type)
+  {
+  case pcMorecore:
+  msg.value1 = (unsigned int) sender->vmm->alloc(msg.value1, "morecore");
+  break;
+  
+  case pcDie:
+  hal->taskman->kill(msg.sender, msg.value1);
+  break;
+  
+  case pcSetRootFS:
+  if(namer_tid == 0)
+   {
+   namer_tid = msg.sender;
+   printf("procman: setting root FS server to %d\n", msg.sender);
+   }
+  break;
+  
+  case pcGetRootFS:
+  msg.value1 = namer_tid;
+  break;
+  
+  case pcStartThread:
+  msg.value1 = hal->taskman->create_task(3, msg.value1, 1, sender->vmm)->index;
+  break;
+  }
+ reply(msg);
+ }
+}
+
 void Core::launch_procman()
 {
 VirtualMemoryManager* vmm = new VirtualMemoryManager(true);
+for(int i = 0; i < 16; i++)
+ IRQs[i] = NULL;
 procman = hal->taskman->create_task(0, (unsigned int) &process_manager, 1, vmm);
 procman->tss->eflags |= 0x3000;
-procman_initialized = false;
 }
 
 void Core::process_irq(unsigned int irq)
 {
 if(irq == 7)
  return;
-List<unsigned int>* i;
+printf(" IRQ%d ", irq);
+/*List<unsigned int>* i;
 if(IRQs[irq])
- iterate_list(i, IRQs[irq])
-  {
-  Message msg;
-  msg.type = Procman::mtIRQFired;
-  msg.task = i->item;
-  msg.buffer = &irq;
-  msg.size = sizeof(irq);
-  messenger->send(0, &msg);
-  }
+ printf("irq %d fired", irq);*/
 }
 
 void Core::attach_irq(unsigned int irq, unsigned int task)

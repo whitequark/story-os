@@ -1,23 +1,33 @@
 #ifndef _MESSAGES_H_
 #define _MESSAGES_H_
 
-#include <msgtype.h>
-#include <ipc.h>
+#define SYSCALL_SEND 10
+#define SYSCALL_RECEIVE 11
+#define SYSCALL_REPLY 12
+#define SYSCALL_FORWARD 13
 
-struct CoreMessage
+struct Message
 {
-unsigned int sender;
-unsigned int type;
 void* data;
-unsigned int length;
-CoreMessage *next;
+unsigned int data_length;
+unsigned int data_received;
+
+void* reply;
+unsigned int reply_length;
+unsigned int reply_sent;
+
+unsigned int type;
+unsigned int value1;
+unsigned int value2;
+
+unsigned int sender;
+unsigned int receiver;
 };
 
-class CoreMessenger
+class Messenger
 {
 public:
-CoreMessenger();
-bool send(unsigned int sender, Message* msg);
+Messenger();
 };
 
 #endif

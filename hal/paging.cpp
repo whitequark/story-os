@@ -57,6 +57,7 @@ return table->page[page & 0x3F];
 
 void Paging::set_pte(PageDirectory* pagedir, unsigned int page, unsigned int value)
 {
+hal->cli_c();
 PageTable* table = (PageTable*) (pagedir->table[page >> 10] & 0xFFFFF000);
 if(table == NULL)
  {
@@ -64,8 +65,8 @@ if(table == NULL)
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
-//asm("invlpg (%0)"::"r" (page): "memory"); FIXME
 table->page[page & 0x3F] = value;
+hal->sti_c();
 }
 
 void Paging::load_cr3(PageDirectory* cr3)

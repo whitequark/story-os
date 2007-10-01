@@ -207,6 +207,8 @@ printf("\n");
 void VirtualMemoryManager::merge()
 {
 bool no_advance = false;
+//FIXME error! bochs when reset
+return;
 for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = no_advance ? vmb : vmb->next)
  if(!vmb->allocated && !vmb->next->allocated)
   {

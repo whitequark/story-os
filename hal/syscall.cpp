@@ -20,18 +20,15 @@
 #include <colors.h>
 #include <core.h>
 
-unsigned int syscall_stop(Registers r)
+unsigned int syscall_printf(Registers r)
 {
-printf("%z*** STOP", BG_RED + WHITE);
-while(1);
+printf("%s", r.ebx);
+return 0;
 }
 
-unsigned int syscall_wait_procman(Registers r)
+unsigned int syscall_get_tid(Registers r)
 {
-hal->taskman->current->reason = rsNotNULL;
-hal->taskman->current->wait_object = (unsigned int) &core->procman_initialized;
-hal->taskman->schedule();
-return 2;
+return hal->taskman->current->index;
 }
 
 extern "C" unsigned int syscall_handler(Registers r)
@@ -106,6 +103,6 @@ SyscallManager::SyscallManager()
 handlers = new SyscallHandler[100];
 hal->idt->set_trap(0x31, &syscall, hal->sys_code, 3);
 
-add(1, &syscall_stop);
-add(2, &syscall_wait_procman);
+add(SYSCALL_GET_TID, &syscall_get_tid);
+add(2, &syscall_printf);
 }

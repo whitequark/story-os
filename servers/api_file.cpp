@@ -1,46 +1,104 @@
-//    This file is part of the Story OS
-//    Copyright (C) 2007  Peter Zotov
-//
-//    Story OS is free software; you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation; either version 2 of the License, or
-//    (at your option) any later version.
-//
-//    Story OS is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License along
-//    with this program; if not, write to the Free Software Foundation, Inc.,
-//    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
 #include <file.h>
-#include <procman.h>
+#include <story.h>
 #include <string.h>
+
+unsigned int File::root_fs_server;
 
 File::File(char* name)
 {
 this->name = name;
-Procman p;
-fs_server = p.get_fs_server_tid();
+server_tid = 0;
+file_id = 0;
+while(root_fs_server == 0)
+ root_fs_server = get_root_fs();
 }
 
-bool File::open()
+int File::get_root_fs()
 {
+Message msg = {0};
+msg.type = pcGetRootFS;
+msg.receiver = PROCMAN_TID;
+send(msg);
+return msg.value1;
 }
 
-bool File::create()
+int File::create()
 {
-Message msg;
-msg.task = fs_server;
-msg.type = File::mtCreate;
-msg.size = strlen(name) + 1;
-msg.buffer = name;
-m.send(msg);
+Message msg = {0};
+msg.type = foCreate;
+msg.data = name;
+msg.data_length = strlen(name) + 1;
+msg.receiver = root_fs_server;
+send(msg);
+server_tid = msg.sender;
+file_id = msg.value1;
+return msg.type;
+}
 
-m.receive_reply(msg);
-if(msg.type != rtOk)
- return false;
-return true;
+int File::resolve()
+{
+Message msg = {0};
+msg.type = foResolve;
+msg.data = name;
+msg.data_length = strlen(name) + 1;
+msg.receiver = root_fs_server;
+send(msg);
+server_tid = msg.sender;
+file_id = msg.value1;
+mounted = msg.value2;
+return msg.type;
+}
+
+int File::mount(unsigned int tid, unsigned int parameter)
+{
+Message msg = {0};
+msg.type = foMount;
+msg.data = name;
+msg.data_length = strlen(name) + 1;
+msg.receiver = root_fs_server;
+msg.value1 = tid;
+msg.value2 = parameter;
+send(msg);
+return msg.type;
+}
+
+int File::write(void* data, unsigned int length)
+{
+if(server_tid == 0)
+ {
+ int r = resolve();
+ if(r != frOk)
+  return r;
+ }
+Message msg = {0};
+msg.type = foWrite;
+msg.data = data;
+msg.data_length = length;
+msg.receiver = server_tid;
+msg.value1 = file_id;
+send(msg);
+return msg.type;
+}
+
+int File::read(void* data, unsigned int length)
+{
+if(server_tid == 0)
+ {
+ int r = resolve();
+ if(r != frOk)
+  return r;
+ }
+Message msg = {0};
+msg.type = foRead;
+msg.reply = data;
+msg.reply_length = length;
+msg.receiver = server_tid;
+msg.value1 = file_id;
+send(msg);
+return msg.type;
+}
+
+bool File::is_mounted()
+{
+return mounted;
 }

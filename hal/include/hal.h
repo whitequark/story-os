@@ -25,6 +25,7 @@ public:
 KernelTerminal();
 
 void put_char(char ch);
+void put_char_raw(unsigned char ch, unsigned char color);
 void set_color(unsigned char color);
 void clear();
 };

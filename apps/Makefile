@@ -1,11 +1,3 @@
 include ../template.mk
-LIB=../lib/*.o
-API=../api/*.o
-SAPI=../servers/api_*.o
 
-all:	app.o app
-
-%: %.o
-	@echo "Linking '$@'"
-	@ld -nostdlib -Ttext 0x10000000 $< $(LIB) $(API) $(SAPI) -o ../output/$@ --oformat elf32-i386
-	
+all:	app1.o app1 app2.o app2 fwd.o fwd app.o app
