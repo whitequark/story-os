@@ -2,13 +2,12 @@
 #include <story.h>
 #include <string.h>
 
-unsigned int File::root_fs_server;
-
 File::File(char* name)
 {
 this->name = name;
 server_tid = 0;
 file_id = 0;
+root_fs_server = 0;
 while(root_fs_server == 0)
  root_fs_server = get_root_fs();
 }

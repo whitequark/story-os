@@ -3,6 +3,7 @@ timeout 1
 title Story OS
 	root (cd)
 	kernel /kernel
-        module /app1
-        module /app2
-        module /idle
+        module /fs
+        module /tty
+        module /null
+        module /app

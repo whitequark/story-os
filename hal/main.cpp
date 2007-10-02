@@ -67,11 +67,6 @@ extern "C" void set_debug_traps();
 extern "C" void breakpoint();
 #endif
 
-bool mm_initialized;
-char page[0x1000];
-
-void* reserved_block = NULL;
-
 extern "C" void entry(unsigned long magic, multiboot_info_t* multiboot_info)
 {
 unsigned int mm_position = 0x00400000;
@@ -84,9 +79,7 @@ if(multiboot_info->mods_count != 0)
 
 MemoryManager* mm = new (mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024 + 0x100000);
 
-mm_initialized = false; //because malloc uses morecore that uses mm->alloc that uses new() that uses malloc :)
-init_mallocator();      //see morecore lower
-mm_initialized = true;
+kinit_malloc();
 
 hal = new HAL(multiboot_info);
 hal->mm = mm;
@@ -101,32 +94,6 @@ printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Peter Zotov\n", LIGHTBL
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
 printf("Thanks to Legos, DinamytE, SadKo and all OSDev.ru community.\n\n");
-
-kinit_malloc();
-
-void *k1, *k2, *k3;
-
-kstate();
-printf("alloc: %X\n", k1 = kmalloc(50));
-kstate();
-printf("alloc: %X\n", k2 = kmalloc(3900));
-kstate();
-printf("alloc: %X\n", k3 = kmalloc(50));
-kstate();
-
-printf("free: %X\n", k1);
-kfree(k1);
-kstate();
-
-printf("free: %X\n", k3);
-kfree(k3);
-kstate();
-
-printf("free: %X\n", k2);
-kfree(k2);
-kstate();
-
-while(1);
 
 /*for(int i = 0; i < 8; i++)
  {
@@ -302,13 +269,3 @@ va_end(args);
 }
 
 #endif
-
-void* morecore(unsigned int count)
-{
-if(!mm_initialized)
- return page;
-free(reserved_block);
-void* block = hal->mm->alloc(count);
-reserved_block = malloc(500);
-return block;
-}

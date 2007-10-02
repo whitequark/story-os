@@ -30,22 +30,22 @@ hal->panic("PURE VIRTUAL FUNCTION CALLED!!!\n");
 
 void* operator new(unsigned int size)
 {
-return calloc(size, 1);
+return kcalloc(size, 1);
 }
 
 void* operator new[](unsigned int size)
 {
-return calloc(size, 1);
+return kcalloc(size, 1);
 }
 
 void operator delete(void* p)
 {
-free(p);
+kfree(p);
 }
 
 void operator delete[](void* p)
 {
-free(p);
+kfree(p);
 }
 
 void* operator new(unsigned int, unsigned int p)

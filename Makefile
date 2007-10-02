@@ -1,5 +1,5 @@
-OBJDIRS=hal lib core
-FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)
+OBJDIRS=hal core
+FILES=$(foreach dir, $(OBJDIRS), $(dir)/*.o)  lib/memory.o lib/string.o
 VERSION=0.48
 
 all:

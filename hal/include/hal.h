@@ -97,6 +97,7 @@ void putchar(char c);
 void textcolor(char color);
 
 void* kmalloc(unsigned int size);
+void* kcalloc(unsigned int size, unsigned int count);
 void kfree(void* addr);
 void kinit_malloc();
 void kstate();

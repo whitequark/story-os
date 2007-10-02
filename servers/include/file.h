@@ -27,13 +27,13 @@ foRead    (client): v1 = file id, (v2 = position)
 foRead     (reply): d = data
 */
 
-typedef enum { foCreate, foResolve, foMount, foUnmount, foRead, foWrite } FSOperation;
-typedef enum { frOk, frCommandNotSupported, frPathTooLong, frFileNotFound, frAlreadyMounted };
+typedef enum { foCreate = 0, foResolve, foMount, foUnmount, foRead, foWrite } FSOperation;
+typedef enum { frOk = 0, frCommandNotSupported, frPathTooLong, frFileNotFound, frAlreadyMounted };
 
 class File
 {
 private:
-static unsigned int root_fs_server;
+unsigned int root_fs_server;
 char* name;
 unsigned int server_tid;
 unsigned int file_id;

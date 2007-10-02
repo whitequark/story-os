@@ -19,6 +19,7 @@ unsigned int reply_sent;
 unsigned int type;
 unsigned int value1;
 unsigned int value2;
+unsigned int value3;
 
 unsigned int sender;
 unsigned int receiver;

@@ -64,12 +64,12 @@ return tid;
 
 void printf(char* fmt, ...)
 {
-/*va_list list;
+va_list list;
 va_start(list, fmt);
 char buf[1000] = {0};
 vsprintf(buf, fmt, list);
 va_end(list);
-SYSCALL1(2, buf);*/
+SYSCALL1(2, buf);
 }
 
 int send(Message& msg)

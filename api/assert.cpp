@@ -17,22 +17,12 @@
 
 #include <colors.h>
 #include <system.h>
+#include <vsprintf.h>
 
 extern "C" void __assert_fail (__const char *__assertion, __const char *__file,
                            unsigned int __line, __const char *__function)
 {
-/*Terminal t;
-t.color(LIGHTRED);
-t.put_string("ASSERTION FAILED: ");
-t.put_string(__assertion);
-t.put_string("\nFile: ");
-t.put_string(__file);
-t.put_string(" Line: ");
-t.put_string("FIXME!");
-t.put_string(" Function: ");
-t.put_string(__function);
-t.put_string("\n");
-t.color(LIGHTGRAY);*/
+printf("ASSERTION FAILED: %s\nFile: %s\nLine: %d Function: %s\n", __assertion, __file, __line, __function);
 while(1);
 }
 

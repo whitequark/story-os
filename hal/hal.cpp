@@ -95,7 +95,7 @@ while(1)
   continue; //it's not an option, simply 2 spaces
  else
   {
-  option = (char*) calloc(1, opt_end - cmd + 1);
+  option = (char*) kcalloc(1, opt_end - cmd + 1);
   strncpy(option, cmd, opt_end - cmd);
   if(!strcmp(option, opt_needed))
    {
@@ -106,8 +106,8 @@ while(1)
      val_end++;
     if(val_end - opt_end > 0)
      {
-     free(option);
-     option = (char*) calloc(1, val_end - opt_end + 1);
+     kfree(option);
+     option = (char*) kcalloc(1, val_end - opt_end + 1);
      strncpy(option, opt_end + 1, val_end - opt_end);
      }
     return option;
@@ -115,7 +115,7 @@ while(1)
    return option;
    }
   else
-   free(option);
+   kfree(option);
   }
  }
 return NULL;

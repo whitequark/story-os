@@ -12,19 +12,29 @@ if(msg == NULL)
 Task* dest = hal->taskman->task(msg->receiver);
 Task* curr = hal->taskman->current;
 if(dest == NULL || dest->wait_reason == wrDead)
+ {
+ printf("send: no destination\n");
  return MSG_ERROR;
+ }
 if((msg->data == NULL && msg->data_length != 0) ||
    (msg->data != NULL && msg->data_length == 0) ||
    (msg->reply == NULL && msg->reply_length != 0) ||
    (msg->reply != NULL && msg->reply_length == 0))
+ {
+ printf("send: malformed data/reply\n");
  return MSG_ERROR;
+ }
 msg->sender = curr->index;
 if(msg->sender == msg->receiver)
+ {
+ printf("send: cannot send to self\n");
  return MSG_ERROR;
+ }
 //passed checks
 Message* cmsg = new Message();
 cmsg->value1 = msg->value1;
 cmsg->value2 = msg->value2;
+cmsg->value3 = msg->value3;
 cmsg->type = msg->type;
 cmsg->data_length = msg->data_length;
 cmsg->reply_length = msg->reply_length;
@@ -54,6 +64,7 @@ Message* reply = curr->reply;
 msg->type = reply->type;
 msg->value1 = reply->value1;
 msg->value2 = reply->value2;
+msg->value3 = reply->value3;
 msg->data_received = reply->data_received;
 msg->reply_sent = reply->reply_sent;
 msg->sender = reply->sender;
@@ -90,6 +101,7 @@ if((umsg->data == NULL && umsg->data_length != 0) ||
 umsg->type = msg->type;
 umsg->value1 = msg->value1;
 umsg->value2 = msg->value2;
+umsg->value3 = msg->value3;
 umsg->sender = msg->sender;
 if(umsg->data_length != 0 && msg->data_length != 0)
  memcpy(umsg->data, msg->data, umsg->data_length > msg->data_length ? msg->data_length : umsg->data_length);
@@ -117,6 +129,7 @@ if((umsg->reply == NULL && umsg->reply_length != 0) ||
  msg->type = umsg->type;
  msg->value1 = umsg->value1;
  msg->value2 = umsg->value2;
+ msg->value3 = umsg->value3;
  msg->sender = curr->index;
  msg->reply_sent = umsg->reply_length;
  if(umsg->reply_length != 0 && msg->reply_length != 0)
@@ -154,6 +167,7 @@ cmsg->item->receiver = umsg->receiver;
 cmsg->item->type = umsg->type;
 cmsg->item->value1 = umsg->value1;
 cmsg->item->value2 = umsg->value2;
+cmsg->item->value3 = umsg->value3;
 cmsg->item->data_length = umsg->data_length;
 delete[] cmsg->item->data;
 if(cmsg->item->data_length != 0)

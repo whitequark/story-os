@@ -13,7 +13,6 @@ assert(zero.create() == frOk);
 assert(null.create() == frOk);
 assert(zero.mount(get_tid(), ZERO_ID) == frOk);
 assert(null.mount(get_tid(), NULL_ID) == frOk);
-printf("null: initialized\n");
 
 while(1)
  {

@@ -28,8 +28,8 @@ File* stdout;
 extern "C" void _start()
 {
 init_mallocator();
-/*stdout = new File("/dev/tty");
-stdin = new File("/dev/null");*/
+stdout = new File("/dev/stdout");
+stdin = new File("/dev/stdin");
 die(main());
 }
 
@@ -90,9 +90,9 @@ va_list list;
 va_start(list, fmt);
 vsprintf(buf, fmt, list);
 va_end(list);
-/*while(stdout->resolve() != frOk || stdout->is_mounted() == false);
-stdout->write(buf, strlen(buf) + 1);*/
-SYSCALL1(2, buf);
+while(stdout->resolve() != frOk || stdout->is_mounted() == false);
+stdout->write(buf, strlen(buf) + 1);
+//SYSCALL1(2, buf);
 }
 
 int gain_io_privilegies()
