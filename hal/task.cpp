@@ -59,12 +59,12 @@ extern "C" void timer_handler()
 static int d;
 const int p = 300;
 if(d == p*4) d = 0;
-if(d > p * 2)
+/*if(d > p * 2)
  { hal->outb(0x0a, 0x3d4); hal->outb(12, 0x3d5);
    hal->outb(0x0b, 0x3d4); hal->outb(13, 0x3d5); } 
 else 
  { hal->outb(0x0a, 0x3d4); hal->outb(32, 0x3d5);
-   hal->outb(0x0b, 0x3d4); hal->outb(32, 0x3d5); }
+   hal->outb(0x0b, 0x3d4); hal->outb(32, 0x3d5); }*/
 
 hal->clock->tick();
 
@@ -132,7 +132,7 @@ void TaskManager::process_irq(unsigned int number)
 core->process_irq(number);
 }
 
-Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm)
+Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm, unsigned int push, unsigned int* data)
 {
 hal->cli_c();
 Task* task = new Task;
@@ -144,7 +144,7 @@ task->next = current->next;
 current->next = task;
 
 unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);
-stack_pl0 += PL0_STACK_SIZE * 0x1000 - 1;
+stack_pl0 += PL0_STACK_SIZE * 0x1000 - 4;
 
 task->tss = new TSS;
 
@@ -161,7 +161,10 @@ task->tss->esi = 0;
 task->tss->edi = 0;
 
 unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE, "stack");
-stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 10;
+stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 4;
+for(int i = 0; i < push; i++)
+ *((unsigned int*)vmm->virtual_to_physical(stack_pl3 - i * 4)) = data[i];
+stack_pl3 -= push * 4;
 
 task->tss->esp0 = stack_pl0;
 task->tss->esp = stack_pl3;
@@ -246,7 +249,6 @@ current->index = next_index++;
 current->pl = 0;
 current->priority = 0; //do not execute at all
 current->wait_reason = wrDead;
-current->next = current;
 
 current->tss = new TSS;
 
@@ -270,7 +272,7 @@ task->index = next_index++;
 task->pl = 0;
 task->priority = 0;
 task->vmm = NULL;
-task->next = current->next;
+task->next = current;
 task->wait_reason = wrDead;
 current->next = task;
 

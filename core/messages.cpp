@@ -22,7 +22,14 @@ msg->sender = curr->index;
 if(msg->sender == msg->receiver)
  return MSG_ERROR;
 //passed checks
-Message* cmsg = new Message(*msg);
+Message* cmsg = new Message();
+cmsg->value1 = msg->value1;
+cmsg->value2 = msg->value2;
+cmsg->type = msg->type;
+cmsg->data_length = msg->data_length;
+cmsg->reply_length = msg->reply_length;
+cmsg->receiver = msg->receiver;
+cmsg->sender = msg->sender;
 if(msg->data_length != 0)
  {
  cmsg->data = new char[msg->data_length];
@@ -76,13 +83,16 @@ if(curr->messages == NULL)
 Message *msg = curr->messages->item, *umsg = (Message*) r.ebx;
 if(umsg == NULL)
  return MSG_ERROR;
+if((umsg->data == NULL && umsg->data_length != 0) ||
+   (umsg->data != NULL && umsg->data_length == 0))
+ return MSG_ERROR;
 
 umsg->type = msg->type;
 umsg->value1 = msg->value1;
 umsg->value2 = msg->value2;
 umsg->sender = msg->sender;
 if(umsg->data_length != 0 && msg->data_length != 0)
- memcpy(umsg->data, msg->data, umsg->data_length);
+ memcpy(umsg->data, msg->data, umsg->data_length > msg->data_length ? msg->data_length : umsg->data_length);
 umsg->data_received = msg->data_length;
 msg->data_received = umsg->data_length;
 umsg->reply_length = msg->reply_length;
@@ -102,16 +112,19 @@ if(umsg == NULL)
 if((umsg->reply == NULL && umsg->reply_length != 0) ||
    (umsg->reply != NULL && umsg->reply_length == 0))
  return MSG_ERROR;
-msg->type = umsg->type;
-msg->value1 = umsg->value1;
-msg->value2 = umsg->value2;
-msg->sender = curr->index;
-msg->reply_sent = umsg->reply_length;
-if(umsg->reply_length != 0 && msg->reply_length != 0)
- memcpy(msg->reply, umsg->reply, msg->reply_length > umsg->reply_length ? msg->reply_length : umsg->reply_length);
-dest->reply = msg;
-if(dest->wait_reason == wrReply)
- dest->wait_reason = wrNone;
+/*if(msg->sender != 0)
+ {*/
+ msg->type = umsg->type;
+ msg->value1 = umsg->value1;
+ msg->value2 = umsg->value2;
+ msg->sender = curr->index;
+ msg->reply_sent = umsg->reply_length;
+ if(umsg->reply_length != 0 && msg->reply_length != 0)
+  memcpy(msg->reply, umsg->reply, msg->reply_length > umsg->reply_length ? msg->reply_length : umsg->reply_length);
+ dest->reply = msg;
+ if(dest->wait_reason == wrReply)
+  dest->wait_reason = wrNone;
+ /*}*/
 
 //advance
 List<Message*>* next = curr->messages->next;

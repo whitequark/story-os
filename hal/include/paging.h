@@ -27,8 +27,10 @@ void load_cr3(PageDirectory* cr3);
 
 void set_pte(PageDirectory* pagedir, unsigned int page, unsigned int value);
 unsigned int get_pte(PageDirectory* pagedir, unsigned int page);
-
-unsigned int bytes_to_pages(unsigned int bytes);
 };
+
+inline unsigned int bytes_to_pages(unsigned int bytes)
+ { return (bytes % 0x1000 == 0) ? (bytes / 0x1000) : (bytes / 0x1000 + 1); }
+
 
 #endif

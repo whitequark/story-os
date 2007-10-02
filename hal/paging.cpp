@@ -78,8 +78,3 @@ void Paging::enable()
 {
 asm("mov %%cr0, %%eax \n orl $0x80000000, %%eax \n mov %%eax, %%cr0":::"eax");
 }
-
-unsigned int Paging::bytes_to_pages(unsigned int bytes)
-{
-return (bytes % 0x1000 == 0) ? (bytes / 0x1000) : (bytes / 0x1000 + 1);
-}

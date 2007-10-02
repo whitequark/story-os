@@ -22,7 +22,9 @@
 
 #define SYSCALL_GET_TID 1
 
-typedef enum { pcMorecore, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread } ProcmanCommands;
+typedef enum { pcMorecore, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread, pcGainIOPrivilegies, pcAttachIRQ, pcDelay } ProcmanCommands;
+typedef enum { prOk, prNoPrivilegies } ProcmanReplies;
+typedef enum { pmIRQFired } ProcmanMessages;
 
 /*
 all buffers may be NULL, but only when _length is also 0
@@ -49,7 +51,8 @@ int forward(Message& msg);
 void die(int return_code);
 unsigned int get_tid();
 void printf(char* fmt, ...);
-unsigned int start_thread(void(*address)());
+unsigned int start_thread(int(*address)());
+void delay(unsigned int ms);
 
 extern File* stdin;
 extern File* stdout;

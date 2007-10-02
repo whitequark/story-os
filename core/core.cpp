@@ -64,7 +64,7 @@ else hal->panic("No modules detected!\n");
 if(errors_found) printf("%zErrors when loading modules!%z\n", RED, LIGHTGRAY);
 else             printf("%zLoaded successfully%z\n", GREEN, LIGHTGRAY);
  
-printf("Free memory: %i KB / %i KB\n\n", 
+printf("Free memory: %i KB / %i KB\n", 
 	hal->mm->free_memory() / 0x400, hal->mm->all_memory() / 0x400);
 }
 
@@ -112,7 +112,7 @@ for(p = pheader; p < pheader + header->e_phnum; p++)
   ;
  else if(p->p_type == PT_LOAD)
   {
-  unsigned int pages = hal->paging->bytes_to_pages(p->p_memsz);
+  unsigned int pages = bytes_to_pages(p->p_memsz);
   if(p->p_filesz == 0) //FIXME: some bug at alloc_at???
    continue;
   unsigned int phys = (start + p->p_offset) & 0xFFFFF000;
@@ -149,6 +149,7 @@ while(1)
  receive(msg);
  
  Task* sender = hal->taskman->task(msg.sender);
+ Task* n;
  
  switch(msg.type)
   {
@@ -173,8 +174,24 @@ while(1)
   break;
   
   case pcStartThread:
-  msg.value1 = hal->taskman->create_task(3, msg.value1, 1, sender->vmm)->index;
+  n = hal->taskman->create_task(3, msg.value1, 1, sender->vmm, 1, &msg.value2);
+  n->tss->eflags |= 0x3000;
+  msg.value1 = n->index;
   break;
+  
+  case pcGainIOPrivilegies:
+  sender->tss->eflags |= 0x3000;
+  break;
+  
+  case pcAttachIRQ:
+  core->attach_irq(msg.value1, msg.sender);
+  break;
+  
+  case pcDelay:
+  reply(msg);
+  sender->wait_reason = wrDelay;
+  sender->wait_object = msg.value1;
+  continue;
   }
  reply(msg);
  }
@@ -191,12 +208,22 @@ procman->tss->eflags |= 0x3000;
 
 void Core::process_irq(unsigned int irq)
 {
-if(irq == 7)
- return;
-printf(" IRQ%d ", irq);
-/*List<unsigned int>* i;
+List<unsigned int>* i;
 if(IRQs[irq])
- printf("irq %d fired", irq);*/
+ {
+ iterate_list(i, IRQs[irq])
+  {
+  Message *m = new Message;
+  m->sender = 0;
+  m->type = pmIRQFired;
+  m->value1 = irq;
+  Task* tsk = hal->taskman->task(i->item);
+  if(tsk->messages)
+   tsk->messages->add_tail(new List<Message*>(m));
+  else
+   tsk->messages = new List<Message*>(m);
+  }
+ }
 }
 
 void Core::attach_irq(unsigned int irq, unsigned int task)

@@ -35,6 +35,7 @@ void alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned
 void load();
 unsigned int get_directory();
 int change_threads(int delta);
+unsigned int virtual_to_physical(unsigned int virt);
 void show();
 };
 

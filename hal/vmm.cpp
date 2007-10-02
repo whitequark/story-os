@@ -155,6 +155,11 @@ for(unsigned int i = 0; i < count; i++)
  hal->paging->set_pte(directory, (virt >> 12) + i, ((phys + (i << 12)) & 0xFFFFF000 ) | attr);
 }
 
+unsigned int VirtualMemoryManager::virtual_to_physical(unsigned int virt)
+{
+return (hal->paging->get_pte(directory, virt >> 12) & 0xFFFFF000) + (virt & 0x0FFF);
+}
+
 void VirtualMemoryManager::alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved, char* description)
 {
 unsigned int pvirt = virt >> 12; //paged virtual

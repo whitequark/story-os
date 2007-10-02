@@ -28,9 +28,14 @@ File* stdout;
 extern "C" void _start()
 {
 init_mallocator();
-stdout = new File("/dev/tty");
-stdin = new File("/dev/null");
+/*stdout = new File("/dev/tty");
+stdin = new File("/dev/null");*/
 die(main());
+}
+
+void _thread_start(int(*func)())
+{
+die(func());
 }
 
 extern "C" void __gxx_personality_v0()
@@ -67,12 +72,13 @@ RSYSCALL0(SYSCALL_GET_TID, tid);
 return tid;
 }
 
-unsigned int start_thread(void(*address)())
+unsigned int start_thread(int(*address)())
 {
 Message m = {0};
 m.receiver = PROCMAN_TID;
 m.type = pcStartThread;
-m.value1 = (unsigned int) address;
+m.value1 = (unsigned int) &_thread_start;
+m.value2 = (unsigned int) address;
 send(m);
 return m.value1;
 }
@@ -84,8 +90,36 @@ va_list list;
 va_start(list, fmt);
 vsprintf(buf, fmt, list);
 va_end(list);
-while(stdout->resolve() != frOk || stdout->is_mounted() == false);
-stdout->write(buf, strlen(buf) + 1);
+/*while(stdout->resolve() != frOk || stdout->is_mounted() == false);
+stdout->write(buf, strlen(buf) + 1);*/
+SYSCALL1(2, buf);
+}
+
+int gain_io_privilegies()
+{
+Message m = {0};
+m.receiver = PROCMAN_TID;
+m.type = pcGainIOPrivilegies;
+send(m);
+return m.type;
+}
+
+void attach_irq(unsigned int irq)
+{
+Message m = {0};
+m.receiver = PROCMAN_TID;
+m.type = pcAttachIRQ;
+m.value1 = irq;
+send(m);
+}
+
+void delay(unsigned int delay)
+{
+Message m = {0};
+m.receiver = PROCMAN_TID;
+m.type = pcDelay;
+m.value1 = delay;
+send(m);
 }
 
 int send(Message& msg)

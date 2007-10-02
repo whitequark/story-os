@@ -14,7 +14,7 @@ class Core
 private:
 Core();
 Task* load_elf(unsigned int start, unsigned int size);
-Task* procman;
+Task *procman, *idle;
 List<unsigned int>* IRQs[16];
 Messenger* messenger;
 
@@ -24,6 +24,7 @@ Core(multiboot_info_t*);
 void process_irq(unsigned int number);
 void attach_irq(unsigned int irq, unsigned int task);
 void launch_procman();
+void launch_idle();
 };
 
 extern Core* core;

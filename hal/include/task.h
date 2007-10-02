@@ -104,7 +104,7 @@ TaskManager();
 bool kill(unsigned int index, unsigned int return_code = 1);
 void process_irq(unsigned int number);
 void scheduler();
-Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm);
+Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm, unsigned int push = 0, unsigned int* data = NULL);
 bool scheduler_running;
 Task* task(unsigned int index);
 void schedule();
