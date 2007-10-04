@@ -47,7 +47,7 @@ if(mbi->mods_count > 0)
   if(t)
    {
    t->pl = 1;
-   t->priority = 10;
+   t->priority = 1;
    t->tss->eflags |= 0x3000; // IOPL=3
    printf("%zok%z (task %i)\n", LIGHTGREEN, LIGHTGRAY, t->index);
    }
@@ -181,6 +181,10 @@ while(1)
   
   case pcGainIOPrivilegies:
   sender->tss->eflags |= 0x3000;
+  break;
+  
+  case pcAttachMemory:
+  msg.value1 = (unsigned int) sender->vmm->map_new_virtual(msg.value1, msg.value2, "AttachMemory request");
   break;
   
   case pcAttachIRQ:

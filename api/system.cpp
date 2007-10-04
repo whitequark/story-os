@@ -19,7 +19,7 @@
 #include <vsprintf.h>
 #include <string.h>
 
-void init_mallocator();
+void init_malloc();
 int main();
 
 File* stdin;
@@ -27,7 +27,7 @@ File* stdout;
 
 extern "C" void _start()
 {
-init_mallocator();
+init_malloc();
 stdout = new File("/dev/stdout");
 stdin = new File("/dev/stdin");
 die(main());
@@ -83,6 +83,17 @@ send(m);
 return m.value1;
 }
 
+void* attach_memory(unsigned int count, unsigned int physical)
+{
+Message m = {0};
+m.receiver = PROCMAN_TID;
+m.type = pcAttachMemory;
+m.value1 = count;
+m.value2 = physical;
+send(m);
+return (void*) m.value1;
+}
+
 void printf(char* fmt, ...)
 {
 char buf[1024];
@@ -93,6 +104,14 @@ va_end(list);
 while(stdout->resolve() != frOk || stdout->is_mounted() == false);
 stdout->write(buf, strlen(buf) + 1);
 //SYSCALL1(2, buf);
+}
+
+char getch()
+{
+char c;
+while(stdin->resolve() != frOk || stdin->is_mounted() == false);
+stdin->read(&c, 1);
+return c;
 }
 
 int gain_io_privilegies()

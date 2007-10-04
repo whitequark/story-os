@@ -19,12 +19,12 @@
 #include <vsprintf.h>
 #include <string.h>
 
-void init_mallocator();
+void init_malloc();
 int main();
 
 extern "C" void _start()
 {
-init_mallocator();
+init_malloc();
 die(main());
 }
 

@@ -111,6 +111,33 @@ map((unsigned int) phys, vmb->first << 12, count, PAGE_USER | PAGE_WRITABLE | PA
 return (void*) (vmb->first << 12);
 }
 
+void* VirtualMemoryManager::map_new_virtual(unsigned int count, unsigned int phys, char* descr)
+{
+VMemoryBlock *vmb, *nmb; //virtual memory block, next -//-, first -//- (lower)
+for(vmb = mb; vmb != NULL; vmb = vmb->next)
+ if(vmb->count >= count && vmb->allocated == false)
+  break;
+if(vmb == NULL)
+ return NULL;
+
+nmb = vmb->next;
+vmb->allocated = true;
+vmb->physical = (void*) phys;
+if(vmb->count != count)
+ {
+ VMemoryBlock* fmb = new VMemoryBlock;
+ fmb->count = vmb->count - count;
+ fmb->first = vmb->first + count;
+ fmb->next = nmb;
+ fmb->description = vmb->description;
+ vmb->count = count;
+ vmb->next = fmb; //insert free fmb in the middle of vmb and nmb
+ }
+vmb->description = descr;
+map(phys, vmb->first << 12, count, PAGE_USER | PAGE_WRITABLE | PAGE_PRESENT);
+return (void*) (vmb->first << 12);
+}
+
 void VirtualMemoryManager::free(void* address)
 {
 unsigned int page = ((unsigned int) address) >> 12;
@@ -136,7 +163,8 @@ VirtualMemoryManager::~VirtualMemoryManager()
 {
 int i;
 for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = vmb->next)
- free((void*) (vmb->first << 12));
+ if(!vmb->reserved)
+  free((void*) (vmb->first << 12));
 VMemoryBlock* nmb;
 for(VMemoryBlock* vmb = mb; vmb != NULL; vmb = nmb)
  {

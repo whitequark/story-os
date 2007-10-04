@@ -32,6 +32,7 @@ void* alloc(unsigned int count, char* descr = "", bool no_merge = false);
 void free(void* address);
 void map(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr);
 void alloc_at(unsigned int phys, unsigned int virt, unsigned int count, unsigned int attr, bool reserved, char* description = "");
+void* map_new_virtual(unsigned int count, unsigned int phys, char* descr);
 void load();
 unsigned int get_directory();
 int change_threads(int delta);

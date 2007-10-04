@@ -11,14 +11,36 @@
 #define STDIN 1
 #define STDOUT 2
 
+#define CONSOLES 3
+
+#define KEYBOARD_BUFFER_SIZE 100
+
 struct StdinThread
  {
  unsigned int task;
  unsigned int thread;
+ unsigned int console;
  };
 
 List<StdinThread*>* threads;
 Mutex threads_mutex;
+
+struct VirtualConsole
+ {
+ unsigned short* data;
+ unsigned short offset;
+ unsigned char color;
+ char* kbd_buffer;
+ unsigned int kbd_pointer;
+ Mutex kbd_mutex;
+ Mutex stdin_read;
+ unsigned int current_thread;
+ };
+
+VirtualConsole virtual_console[CONSOLES];
+unsigned int current_console;
+unsigned short* lfb;
+Mutex console_mutex;
 
 char scancodes[] = {
   0,
@@ -104,6 +126,50 @@ char scancodes_shifted[] = {
   0, 0, 0, 0, 0, 0, 0, 0
 };
 
+void update_cursor(unsigned short offset)
+{
+outb(0x3d4, 0x0f);
+outb(0x3d5, offset & 0xff);
+offset >>= 8;
+outb(0x3d4, 0x0e);
+outb(0x3d5, offset & 0xff);
+}
+
+void putchar(char ch)
+{
+if(ch == 0)
+ return;
+
+console_mutex.lock();
+VirtualConsole &console = virtual_console[current_console];
+
+switch(ch)
+ {
+ case '\n':
+ console.offset += 80;
+ console.offset -= console.offset % 80;
+ break;
+ 
+ case 8:
+ lfb[--console.offset] = 0x0700;
+ break;
+ 
+ default:
+ lfb[console.offset++] = console.color << 8 | ch;
+ break;
+ }
+
+if(console.offset == 25*80)
+ {
+ console.offset -= 80;
+ memcpy(lfb, lfb + 80, 24*80*2);
+ for(int i = 80*24; i < 80*25; i++)
+  lfb[i] = 0x0700;
+ }
+update_cursor(console.offset);
+console_mutex.unlock();
+}
+
 void tprintf(char* fmt, ...)
 {
 va_list list;
@@ -111,7 +177,21 @@ va_start(list,fmt);
 char buf[1000];
 vsprintf(buf, fmt, list);
 va_end(list);
-SYSCALL1(2, buf);
+for(int i = 0; i < strlen(buf); i++)
+ putchar(buf[i]);
+}
+
+void switch_console(unsigned int number)
+{
+if(current_console == number);
+console_mutex.lock();
+memcpy(virtual_console[current_console].data, lfb, 25*80*2);
+memcpy(lfb, virtual_console[number].data, 25*80*2);
+update_cursor(virtual_console[number].offset);
+current_console = number;
+console_mutex.unlock();
+if(virtual_console[number].offset == 0)
+ tprintf("Virtual Console #%d\n", number + 1);
 }
 
 int keyboard_thread()
@@ -204,10 +284,18 @@ while(1)
      default:
      if(scancode < 0x80) 
       {
-      if(leftshift || rightshift)
-       ascii = scancodes_shifted[scancode];
+      if(leftalt || rightalt)
+       {
+       if(scancode >= 0x3b && scancode < 0x3b + CONSOLES)
+        switch_console(scancode - 0x3b);
+       }
       else
-       ascii = scancodes[scancode];
+       {
+       if(leftshift || rightshift)
+        ascii = scancodes_shifted[scancode];
+       else
+        ascii = scancodes[scancode];
+       }
       }
      break;
      }
@@ -216,7 +304,14 @@ while(1)
   break;
   }
  if(ascii)
-  tprintf("%c", ascii);
+  {
+  VirtualConsole& console = virtual_console[current_console];
+  console.kbd_mutex.lock();
+  if(console.kbd_pointer >= KEYBOARD_BUFFER_SIZE - 1)
+   continue;
+  console.kbd_buffer[console.kbd_pointer++] = ascii;
+  console.kbd_mutex.unlock();
+  }
  }
 }
 
@@ -235,7 +330,7 @@ threads_mutex.unlock();
 if(!me)
  return 0;
 
-tprintf("tty: new stdin thread %d: task %d\n", get_tid(), me->task);
+VirtualConsole& console = virtual_console[me->console];
 
 while(1)
  {
@@ -244,6 +339,9 @@ while(1)
  msg.data = data;
  msg.data_length = MAX_PATH;
  receive(msg);
+ 
+ unsigned int pointer = 0;
+ char ch;
  
  switch(msg.type)
   {
@@ -259,12 +357,48 @@ while(1)
   break;
   
   case foRead:
-  {
-  char* k = "test1234";
-  msg.reply = k;
-  msg.reply_length = strlen(k) + 1;
-  msg.type = frOk;
-  }
+  if(msg.value1 == STDIN)
+   {
+   console.stdin_read.lock();
+   console.current_thread = get_tid();
+   msg.reply = new char[msg.reply_length];
+   if(msg.reply_length > 1)
+    {
+    while(pointer < msg.reply_length)
+     {
+     while(console.kbd_pointer == 0);
+     console.kbd_mutex.lock();
+     for(int i = 0; i < console.kbd_pointer; i++)
+      {
+      if(console.kbd_buffer[i] != 8)
+       ((char*)msg.reply)[pointer++] = console.kbd_buffer[i];
+      else
+       pointer--;
+      if(pointer == -1)
+       pointer = 0;
+      else
+       putchar(console.kbd_buffer[i]);
+      }
+     console.kbd_pointer = 0;
+     console.kbd_mutex.unlock();
+     }
+    }
+   else
+    {
+    while(console.kbd_pointer == 0);
+    console.kbd_mutex.lock();
+    ch = console.kbd_buffer[0];
+    memcpy(&console.kbd_buffer[0], &console.kbd_buffer[1], console.kbd_pointer);
+    console.kbd_pointer--;
+    console.kbd_mutex.unlock();
+    putchar(ch);
+    msg.reply = &ch;
+    }
+   console.stdin_read.unlock();
+   msg.type = frOk;
+   }
+  else
+   msg.type = frFileNotFound;
   break;
   
   default:
@@ -282,6 +416,25 @@ assert(stdout.mount(get_tid(), STDOUT) == frOk);
 File stdin("/dev/stdin");
 assert(stdin.create() == frOk);
 assert(stdin.mount(get_tid(), STDIN) == frOk);
+
+current_console = 0;
+for(int i = 0; i < CONSOLES; i++)
+ {
+ virtual_console[i].data = new unsigned short[25*80];
+ for(int j = 0; j < 25*80; j++)
+  virtual_console[i].data[j] = 0x0700;
+ virtual_console[i].offset = 0;
+ virtual_console[i].color = 0x07;
+ virtual_console[i].kbd_buffer = new char[KEYBOARD_BUFFER_SIZE];
+ virtual_console[i].kbd_pointer = 0;
+ virtual_console[i].kbd_mutex.unlock();
+ virtual_console[i].stdin_read.unlock();
+ }
+lfb = (unsigned short*) attach_memory(1, 0xb8000);
+for(int j = 0; j < 25*80; j++)
+ ((unsigned short*)lfb)[j] = 0x0700;
+console_mutex.unlock();
+switch_console(0);
 
 start_thread(&keyboard_thread);
 threads = NULL;
@@ -324,6 +477,7 @@ while(1)
      th = new StdinThread;
      th->thread = start_thread(&stdin_thread);
      th->task = msg.sender;
+     th->console = 0;
      if(!threads)
       threads = new List<StdinThread*>(th);
      else
@@ -344,7 +498,7 @@ while(1)
   case foWrite:
   if(msg.value1 == STDOUT)
    {
-   SYSCALL1(2, msg.data);
+   tprintf("%s", msg.data);
    msg.type = frOk;
    }
   else
