@@ -94,6 +94,77 @@ iterate_list(i, n)
  }
 }
 
+void create(char* path)
+{
+List<char*> *stripped, *i;
+List<Node*> *n = nodes, *ni, *parent = NULL, *found;
+unsigned int id;
+char mount_path[MAX_PATH] = {0};
+stripped = strip_path(path);
+iterate_list(i, stripped)
+ {
+ if(n == NULL)
+  {
+  Node* nn = new Node;
+  nn->id = current_id++;
+  nn->name = strdup(i->item);
+  parent->item->children = new List<Node*>(nn);
+  n = parent->item->children;
+  parent = n;
+  n = n->item->children;
+  }
+ else
+  {
+  if(n != NULL && n->item->id == 0) // root
+   {
+   parent = n;
+   n = parent->item->children;
+   continue;
+   }
+  List<Node*>* found = NULL;
+  iterate_list(ni, n)
+   if(!strcmp(ni->item->name, i->item))
+    {
+    found = ni;
+    break;
+    }
+  if(found)
+   {
+   n = found->item->children;
+   parent = found;
+   }
+  else
+   {
+   Node* nn = new Node;
+   nn->id = current_id++;
+   nn->name = strdup(i->item);
+   List<Node*>* nl = new List<Node*>(nn);
+   parent->item->children->add_tail(nl);
+   parent = nl;
+   n = nl->item->children;
+   id = nn->id;
+   }
+  }
+ }
+}
+
+unsigned int mount(char* path, unsigned int tid, unsigned int parameter)
+{
+List<Node*>* found;
+found = resolve(path);
+if(found)
+ if(found->item->mounted_tid == 0)
+  {
+  found->item->mounted_tid = tid;
+  found->item->mounted_parameter = parameter;
+  return frOk;
+  }
+ else
+  return frAlreadyMounted;
+else
+ return frFileNotFound;
+}
+
 int main()
 {
 Message m = {0};
@@ -104,6 +175,9 @@ send(m);
 nodes = new List<Node*>(new Node);
 nodes->item->name = "";
 nodes->item->id = current_id++;
+
+create("/modules");
+mount("/modules", 2, 0);
 
 while(1)
  {
@@ -127,52 +201,7 @@ while(1)
  switch(msg.type)
   {
   case foCreate:
-  stripped = strip_path((char*) msg.data);
-  iterate_list(i, stripped)
-   {
-   if(n == NULL)
-    {
-    Node* nn = new Node;
-    nn->id = current_id++;
-    nn->name = strdup(i->item);
-    parent->item->children = new List<Node*>(nn);
-    n = parent->item->children;
-    parent = n;
-    n = n->item->children;
-    }
-   else
-    {
-    if(n != NULL && n->item->id == 0) // root
-     {
-     parent = n;
-     n = parent->item->children;
-     continue;
-     }
-    List<Node*>* found = NULL;
-    iterate_list(ni, n)
-     if(!strcmp(ni->item->name, i->item))
-      {
-      found = ni;
-      break;
-      }
-    if(found)
-     {
-     n = found->item->children;
-     parent = found;
-     }
-    else
-     {
-     Node* nn = new Node;
-     nn->id = current_id++;
-     nn->name = strdup(i->item);
-     List<Node*>* nl = new List<Node*>(nn);
-     parent->item->children->add_tail(nl);
-     parent = nl;
-     n = nl->item->children;
-     id = nn->id;
-     }
-    }
-   }
+  create((char*) msg.data);
   msg.type = frOk;
   msg.value1 = resolve((char*)msg.data)->item->id;
   break;
@@ -201,18 +230,7 @@ while(1)
   break;
   
   case foMount:
-  found = resolve((char*) msg.data);
-  if(found)
-   if(found->item->mounted_tid == 0)
-    {
-    found->item->mounted_tid = msg.value1;
-    found->item->mounted_parameter = msg.value2;
-    msg.type = frOk;
-    }
-   else
-    msg.type = frAlreadyMounted;
-  else
-   msg.type = frFileNotFound;
+  msg.type = mount((char*) msg.data, msg.value1, msg.value2);
   break;
   
   default:

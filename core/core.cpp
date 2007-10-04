@@ -142,7 +142,7 @@ return task;
 
 void process_manager()
 {
-unsigned int namer_tid = 0;
+unsigned int fs_server_tid = 0;
 while(1)
  {
  Message msg = {0};
@@ -155,47 +155,74 @@ while(1)
   {
   case pcMorecore:
   msg.value1 = (unsigned int) sender->vmm->alloc(msg.value1, "morecore");
+  msg.type = prOk;
   break;
   
   case pcDie:
   hal->taskman->kill(msg.sender, msg.value1);
+  msg.type = prOk;
   break;
   
   case pcSetRootFS:
-  if(namer_tid == 0)
+  if(fs_server_tid == 0)
    {
-   namer_tid = msg.sender;
+   fs_server_tid = msg.sender;
    printf("procman: setting root FS server to %d\n", msg.sender);
+   msg.type = prOk;
    }
   break;
   
   case pcGetRootFS:
-  msg.value1 = namer_tid;
+  msg.value1 = fs_server_tid;
+  msg.type = prOk;
   break;
   
   case pcStartThread:
   n = hal->taskman->create_task(3, msg.value1, 1, sender->vmm, 1, &msg.value2);
   n->tss->eflags |= 0x3000;
   msg.value1 = n->index;
+  msg.type = prOk;
   break;
   
   case pcGainIOPrivilegies:
   sender->tss->eflags |= 0x3000;
+  msg.type = prOk;
   break;
   
   case pcAttachMemory:
   msg.value1 = (unsigned int) sender->vmm->map_new_virtual(msg.value1, msg.value2, "AttachMemory request");
+  msg.type = prOk;
   break;
   
   case pcAttachIRQ:
   core->attach_irq(msg.value1, msg.sender);
+  msg.type = prOk;
   break;
   
   case pcDelay:
+  msg.type = prOk;
   reply(msg);
   sender->wait_reason = wrDelay;
   sender->wait_object = msg.value1;
   continue;
+  
+  //MODULES SERVER
+  case foResolve:
+  module_t* mod;
+  int i;
+  for(mod = (module_t*)mbi->mods_addr, i = 0; mod->mod_start != NULL; mod++, i++);
+  if(mod->mod_start == NULL)
+   msg.type = frFileNotFound;
+  else
+   {
+   msg.value1 = i;
+   msg.value2 = 1;
+   msg.type = frOk;
+   }
+  break;
+  
+  default:
+  msg.type = frCommandNotSupported;
   }
  reply(msg);
  }

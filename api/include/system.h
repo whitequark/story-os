@@ -22,7 +22,7 @@
 
 #define SYSCALL_GET_TID 1
 
-typedef enum { pcMorecore, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread, pcGainIOPrivilegies, pcAttachIRQ, pcDelay, pcAttachMemory } ProcmanCommands;
+typedef enum { pcMorecore = 1000, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread, pcGainIOPrivilegies, pcAttachIRQ, pcDelay, pcAttachMemory } ProcmanCommands;
 typedef enum { prOk, prNoPrivilegies } ProcmanReplies;
 typedef enum { pmIRQFired } ProcmanMessages;
 

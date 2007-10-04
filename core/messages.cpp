@@ -13,7 +13,10 @@ Task* dest = hal->taskman->task(msg->receiver);
 Task* curr = hal->taskman->current;
 if(dest == NULL || dest->wait_reason == wrDead)
  {
- printf("send: no destination\n");
+ if(dest == NULL)
+  printf("send: no destination\n");
+ else
+  printf("send: destination dead\n");
  return MSG_ERROR;
  }
 if((msg->data == NULL && msg->data_length != 0) ||

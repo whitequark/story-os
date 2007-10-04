@@ -11,7 +11,7 @@
 #define STDIN 1
 #define STDOUT 2
 
-#define CONSOLES 3
+#define CONSOLES 8
 
 #define KEYBOARD_BUFFER_SIZE 100
 
@@ -35,6 +35,7 @@ struct VirtualConsole
  Mutex kbd_mutex;
  Mutex stdin_read;
  unsigned int current_thread;
+ bool locked;
  };
 
 VirtualConsole virtual_console[CONSOLES];
@@ -306,6 +307,8 @@ while(1)
  if(ascii)
   {
   VirtualConsole& console = virtual_console[current_console];
+  if(console.locked)
+   continue;
   console.kbd_mutex.lock();
   if(console.kbd_pointer >= KEYBOARD_BUFFER_SIZE - 1)
    continue;
@@ -428,10 +431,17 @@ for(int i = 0; i < CONSOLES; i++)
  virtual_console[i].kbd_pointer = 0;
  virtual_console[i].kbd_mutex.unlock();
  virtual_console[i].stdin_read.unlock();
+ virtual_console[i].locked = false;
  }
 lfb = (unsigned short*) attach_memory(1, 0xb8000);
+
+memcpy(virtual_console[CONSOLES-1].data, lfb, 25*80*2);
+virtual_console[CONSOLES-1].locked = true;
+virtual_console[CONSOLES-1].offset = 25*80;
+
 for(int j = 0; j < 25*80; j++)
  ((unsigned short*)lfb)[j] = 0x0700;
+
 console_mutex.unlock();
 switch_console(0);
 

@@ -1,4 +1,4 @@
-CFLAGS=-w -c -Wall -g2 -nostartfiles -nostdlib -fno-rtti -fno-exceptions -fno-leading-underscore
+CFLAGS=-w -c -Wall -g2 -nostartfiles -nostdlib -fno-rtti -fno-exceptions -fno-leading-underscore -fno-stack-protector
 ROOT=/home/quark/story-os/trunk
 INCDIR=-I$(ROOT)/include -I$(ROOT)/lib/include -I$(ROOT)/hal/include -I$(ROOT)/core/include -I$(ROOT)/user/include -I$(ROOT)/core/drivers/include -I$(ROOT)/api/include -I$(ROOT)/servers/include
 LIB=$(ROOT)/lib/*.o
