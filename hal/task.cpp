@@ -37,6 +37,10 @@ while(1)
    if(current->wait_reason == wrNotNULL)
     if(*((unsigned int*) current->wait_object) != 0)
      current->wait_reason = wrNone;
+   if(current->wait_reason == wrTaskDie)
+    if(hal->taskman->task(current->wait_object) != NULL)
+     if(hal->taskman->task(current->wait_object)->wait_reason == wrDead)
+      current->wait_reason = wrNone;
    }
   while(current->wait_reason != wrNone || current->priority == 0);
   unsigned int newi = current->index;
@@ -112,6 +116,7 @@ asm(
 bool TaskManager::kill(unsigned int index, unsigned int return_code)
 {
 Task *t, *r;
+task_mutex.lock();
 if(index == current->index)
  t = current;
 else
@@ -124,6 +129,7 @@ t->wait_reason = wrDead;
 if(t->vmm->change_threads(-1) == 0)
  delete t->vmm;
 
+task_mutex.unlock();
 return true;
 }
 
@@ -134,8 +140,9 @@ core->process_irq(number);
 
 Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm, unsigned int push, unsigned int* data)
 {
-hal->cli_c();
+task_mutex.lock();
 Task* task = new Task;
+task->wait_reason = wrPaused;
 task->index = next_index++;
 task->pl = pl;
 task->priority = priority;
@@ -161,7 +168,7 @@ task->tss->esi = 0;
 task->tss->edi = 0;
 
 unsigned int stack_pl3 = (unsigned int) task->vmm->alloc(PL3_STACK_SIZE, "stack");
-stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 4;
+stack_pl3 = stack_pl3 + PL3_STACK_SIZE * 0x1000 - 8;
 for(int i = 0; i < push; i++)
  *((unsigned int*)vmm->virtual_to_physical(stack_pl3 - i * 4)) = data[i];
 stack_pl3 -= push * 4;
@@ -185,8 +192,8 @@ task->messages = NULL;
 task->reply = NULL;
 
 task->descriptor = new TSSDescriptor((unsigned int)task->tss);
-hal->sti_c();
 
+task_mutex.unlock();
 return task;
 }
 

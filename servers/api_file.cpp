@@ -75,6 +75,7 @@ msg.data = data;
 msg.data_length = length;
 msg.receiver = server_tid;
 msg.value1 = file_id;
+msg.value2 = 0;
 send(msg);
 return msg.type;
 }
@@ -93,8 +94,25 @@ msg.reply = data;
 msg.reply_length = length;
 msg.receiver = server_tid;
 msg.value1 = file_id;
+msg.value2 = 0;
 send(msg);
 return msg.type;
+}
+
+unsigned int File::size()
+{
+if(server_tid == 0)
+ {
+ int r = resolve();
+ if(r != frOk)
+  return r;
+ }
+Message msg = {0};
+msg.type = foGetAttributes;
+msg.receiver = server_tid;
+msg.value1 = file_id;
+send(msg);
+return msg.value1;
 }
 
 bool File::is_mounted()

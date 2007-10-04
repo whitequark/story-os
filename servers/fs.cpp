@@ -201,36 +201,49 @@ while(1)
  switch(msg.type)
   {
   case foCreate:
-  create((char*) msg.data);
-  msg.type = frOk;
-  msg.value1 = resolve((char*)msg.data)->item->id;
+  if(((char*) msg.data)[0] != '/')
+   msg.type = frFileNotFound;
+  else
+   {
+   create((char*) msg.data);
+   msg.type = frOk;
+   msg.value1 = resolve((char*)msg.data)->item->id;
+   }
   break;
   
   case foResolve:
-  found = resolve((char*) msg.data, mount_path);
-  if(found)
+  if(((char*) msg.data)[0] != '/')
+   msg.type = frFileNotFound;
+  else
    {
-   if(found->item->mounted_tid != 0)
+   found = resolve((char*) msg.data, mount_path);
+   if(found)
     {
-    msg.receiver = found->item->mounted_tid;
-    msg.value2 = found->item->mounted_parameter;
-    strcpy((char*) msg.data, mount_path);
-    forward(msg);
-    continue;
+    if(found->item->mounted_tid != 0)
+     {
+     msg.receiver = found->item->mounted_tid;
+     msg.value2 = found->item->mounted_parameter;
+     strcpy((char*) msg.data, mount_path);
+     forward(msg);
+     continue;
+     }
+    else
+     {
+     msg.value1 = found->item->id;
+     msg.value2 = 0;
+     msg.type = frOk;
+     }
     }
    else
-    {
-    msg.value1 = found->item->id;
-    msg.value2 = 0;
-    msg.type = frOk;
-    }
+    msg.type = frFileNotFound;
    }
-  else
-   msg.type = frFileNotFound;
   break;
   
   case foMount:
-  msg.type = mount((char*) msg.data, msg.value1, msg.value2);
+  if(((char*) msg.data)[0] != '/')
+   msg.type = frFileNotFound;
+  else
+   msg.type = mount((char*) msg.data, msg.value1, msg.value2);
   break;
   
   default:

@@ -63,6 +63,7 @@ m.receiver = PROCMAN_TID;
 m.type = pcDie;
 m.value1 = code;
 send(m);
+while(1);
 }
 
 unsigned int get_tid()
@@ -94,6 +95,30 @@ send(m);
 return (void*) m.value1;
 }
 
+unsigned int exec(char* path, char* parameters)
+{
+File prg(path);
+if(prg.resolve() == frOk)
+ {
+ char* image = new char[prg.size()];
+ prg.read(image, prg.size());
+ int n;
+ RSYSCALL2(3, n, prg.size(), image);
+ return n;
+ }
+else
+ return 0;
+}
+
+void wait_die(unsigned int tid)
+{
+Message m = {0};
+m.receiver = PROCMAN_TID;
+m.type = pcWaitDie;
+m.value1 = tid;
+send(m);
+}
+
 void printf(char* fmt, ...)
 {
 char buf[1024];
@@ -103,7 +128,6 @@ vsprintf(buf, fmt, list);
 va_end(list);
 while(stdout->resolve() != frOk || stdout->is_mounted() == false);
 stdout->write(buf, strlen(buf) + 1);
-//SYSCALL1(2, buf);
 }
 
 char getch()

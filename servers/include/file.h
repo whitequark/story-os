@@ -4,8 +4,7 @@
 #define MAX_PATH 1024
 
 /*
-filesystem server must fill up value1 in resolve message with tid of read/write task
-
+Errors:
 All: frCommandNotSupported, frPathTooLong, frOk
 foCreate: 
 foResolve: frFileNotFound
@@ -23,11 +22,13 @@ foResolve  (reply): v1 = file id, v2 = is mounted
 foMount   (client): d = path, v1 = tid, v2 = parameter
 (foUnmount)
 foWrite   (client): d = data, v1 = file_id, (v2 = position)
-foRead    (client): v1 = file id, (v2 = position)
+foRead    (client): v1 = file id, v2 = position
 foRead     (reply): d = data
+foGetAttr (client): v1 = file id
+foGetAttr  (reply): v1 = file size, (v2 = attribute mask)
 */
 
-typedef enum { foCreate = 0, foResolve, foMount, foUnmount, foRead, foWrite } FSOperation;
+typedef enum { foCreate = 0, foResolve, foMount, foUnmount, foRead, foWrite, foGetAttributes } FSOperation;
 typedef enum { frOk = 0, frCommandNotSupported, frPathTooLong, frFileNotFound, frAlreadyMounted };
 
 class File
@@ -50,6 +51,7 @@ int resolve();
 int mount(unsigned int tid, unsigned int parameter = 0);
 int write(void* data, unsigned int length);
 int read(void* data, unsigned int length);
+unsigned int size();
 bool is_mounted();
 };
 

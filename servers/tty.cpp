@@ -155,6 +155,14 @@ switch(ch)
  lfb[--console.offset] = 0x0700;
  break;
  
+ case 0x1b:
+ console.offset--;
+ break;
+ 
+ case 0x1d:
+ console.offset++;
+ break;
+ 
  default:
  lfb[console.offset++] = console.color << 8 | ch;
  break;
@@ -235,9 +243,19 @@ while(1)
    switch(scancode) 
     {
     case 0x48: //up arrow
+    ascii = 0x1a;
+    break;
+    
     case 0x4B: //left arrow
+    ascii = 0x1b;
+    break;
+    
     case 0x4D: //right arrow
+    ascii = 0x1d;
+    break;
+    
     case 0x50: //down arrow
+    ascii = 0x1c;
     break;
     
     case 0x1D:
@@ -373,14 +391,18 @@ while(1)
      console.kbd_mutex.lock();
      for(int i = 0; i < console.kbd_pointer; i++)
       {
-      if(console.kbd_buffer[i] != 8)
+      if(console.kbd_buffer[i] >= 0x20)
+       {
        ((char*)msg.reply)[pointer++] = console.kbd_buffer[i];
-      else
+       putchar(console.kbd_buffer[i]);
+       }
+      if(console.kbd_buffer[i] == 8)
        pointer--;
+       
       if(pointer == -1)
        pointer = 0;
-      else
-       putchar(console.kbd_buffer[i]);
+      else if(console.kbd_buffer[i] == 8)
+       putchar(8);
       }
      console.kbd_pointer = 0;
      console.kbd_mutex.unlock();
@@ -451,6 +473,11 @@ threads_mutex.unlock();
 
 tprintf("tty: initialized\n");
 
+start_thread(&stdin_thread);
+start_thread(&stdin_thread);
+
+while(1);
+
 while(1)
  {
  char data[MAX_PATH];
@@ -484,13 +511,13 @@ while(1)
      {
      threads_mutex.lock();
      th = new StdinThread;
-     th->thread = start_thread(&stdin_thread);
-     th->task = msg.sender;
-     th->console = 0;
      if(!threads)
       threads = new List<StdinThread*>(th);
      else
       threads->add_tail(new List<StdinThread*>(th));
+     th->task = msg.sender;
+     th->console = 0;
+     th->thread = start_thread(&stdin_thread);
      threads_mutex.unlock();
      }
     msg.receiver = th->thread;

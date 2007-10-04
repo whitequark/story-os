@@ -7,7 +7,4 @@
 #define NULL (0)
 #define __PACKED__ __attribute__((__packed__))
 
-inline unsigned int bytes_to_pages(unsigned int bytes)
- { return (bytes % 0x1000 == 0) ? (bytes / 0x1000) : (bytes / 0x1000 + 1); }
-
 #endif

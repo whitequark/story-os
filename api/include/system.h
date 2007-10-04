@@ -22,8 +22,8 @@
 
 #define SYSCALL_GET_TID 1
 
-typedef enum { pcMorecore = 1000, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread, pcGainIOPrivilegies, pcAttachIRQ, pcDelay, pcAttachMemory } ProcmanCommands;
-typedef enum { prOk, prNoPrivilegies } ProcmanReplies;
+typedef enum { pcMorecore = 1000, pcDie, pcGetRootFS, pcSetRootFS, pcStartThread, pcGainIOPrivilegies, pcAttachIRQ, pcDelay, pcAttachMemory, pcWaitDie } ProcmanCommands;
+typedef enum { prOk, prNoPrivilegies, prFailed } ProcmanReplies;
 typedef enum { pmIRQFired } ProcmanMessages;
 
 /*
@@ -54,6 +54,8 @@ void printf(char* fmt, ...);
 unsigned int start_thread(int(*address)());
 void delay(unsigned int ms);
 char getch();
+unsigned int exec(char* path, char* parameters);
+void wait_die(unsigned int tid);
 
 extern File* stdin;
 extern File* stdout;

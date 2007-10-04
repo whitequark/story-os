@@ -4,7 +4,9 @@ title Story OS
 	root (cd)
 	kernel /kernel
         module /fs
+        module /init
         module /tty
         module /null
         module /app
         module /slsh
+        module /hello

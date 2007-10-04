@@ -1,3 +1,3 @@
 include ../template.mk
 
-all:	app.o app idle.o idle slsh.o slsh
+all:	init.o init slsh.o slsh app.o app hello.o hello

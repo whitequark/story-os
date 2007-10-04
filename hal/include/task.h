@@ -6,6 +6,7 @@
 #include <gdt.h>
 #include <list.h>
 #include <messages.h>
+#include <mutex.h>
 
 #define PL0_STACK_SIZE 2
 #define PL3_STACK_SIZE 16
@@ -48,7 +49,7 @@ unsigned int   esi;
 unsigned int   edi;
 } __attribute__((__packed__)) Registers;
 
-typedef enum { wrNone, wrDead, wrTaskDie, wrIRQ, wrDelay, wrMessage, wrReply, wrNotNULL } WaitReason;
+typedef enum { wrNone, wrDead, wrTaskDie, wrIRQ, wrDelay, wrMessage, wrReply, wrNotNULL, wrPaused } WaitReason;
 typedef enum { rrOk, rrInterrupted } ResumeReason;
 
 /*
@@ -97,6 +98,7 @@ unsigned short sched_tss;
 void load_tr(unsigned short descriptor);
 bool scheduling;
 void run_task(Task* task);
+Mutex task_mutex;
 
 public:
 Task* current;
