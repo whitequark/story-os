@@ -391,7 +391,6 @@ while(1)
     memcpy(&console.kbd_buffer[0], &console.kbd_buffer[1], console.kbd_pointer);
     console.kbd_pointer--;
     console.kbd_mutex.unlock();
-    putchar(ch);
     msg.reply = &ch;
     }
    console.stdin_read.unlock();

@@ -7,3 +7,4 @@ title Story OS
         module /tty
         module /null
         module /app
+        module /slsh
