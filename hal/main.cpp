@@ -173,7 +173,6 @@ hal->idt->register_irqs();
 
 hal->pic = new PIC;
 hal->pic->remap(0x20, 0x28);
-hal->pic->mask(0);
 
 hal->syscalls = new SyscallManager();
 
@@ -184,19 +183,16 @@ hal->clock = new Clock();
 
 hal->taskman = new TaskManager();
 
-#ifdef _ENABLE_GDB_STUB_
-set_debug_traps();
-breakpoint();
-#endif
-
 printf("%zCOMPLETE%z\n", GREEN, LIGHTGRAY);
 
 core = new Core(multiboot_info);
 
 printf("%zEnabling taskswitching%z\n\n", LIGHTRED, LIGHTGRAY);
+
 hal->sti();
 hal->pic->unmask(0);
-//hal->taskman->mt(true);
+hal->taskman->mt(true);
+hal->taskman->start();
 
 for(;;);
 }

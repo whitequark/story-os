@@ -38,9 +38,7 @@ return "\0\0\0\0\0\0\0\0";
 
 SegmentDescriptor::SegmentDescriptor(unsigned int base, unsigned int limit, bool executable, bool writable, char dpl, bool op32bit, bool conforming)
 {
-bool gran4k = limit > 0xFFFFF;
-if(gran4k)
- limit /= 4096;
+bool gran4k = true;
 
 bytes[0] = (limit & 0x000FF);
 bytes[1] = (limit & 0x0FF00) >> 8;
@@ -104,30 +102,24 @@ else
 int GDT::add_descriptor(GDTDescriptor* desc)
 {
 char* bytes = desc->get_bytes();
-hal->taskman->mt(false); //this must be ATOMIC operation
 memcpy((void*) ((unsigned int) gdt + 8*count), bytes, 8);
 count++;
 if(installed)
  install(); //see GDT::install()
-hal->taskman->mt(true);
 return count - 1;
 }
 
 void GDT::modify_descriptor(GDTDescriptor* desc, unsigned short number)
 {
-hal->taskman->mt(false);
 char* bytes = desc->get_bytes();
 memcpy((void*) ((unsigned int) gdt + 8*number), bytes, 8);
-hal->taskman->mt(true);
 }
 
 void GDT::install()
 {
-hal->taskman->mt(false);
 _gdt_register.limit = count * 8;
-_gdt_register.address = (unsigned int) &gdt;
+_gdt_register.address = (unsigned int) gdt;
 asm("lgdt _gdt_register\n");
-hal->taskman->mt(true);
 
 installed = true;
 //If gdt is already installed, adding a descriptor MUST cause a reinstall(limit updating)

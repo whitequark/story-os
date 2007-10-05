@@ -44,7 +44,7 @@ while(1)
    }
   while(current->wait_reason != wrNone || current->priority == 0);
   unsigned int newi = current->index;
-  //printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
+  printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
   scheduler_running = false;
   run_task(current);
   }
@@ -251,6 +251,8 @@ scheduler_running = false;
 scheduler_started = false;
 no_schedule = true;
 
+hal->idt->set_interrupt(0x20, &irq0, hal->sys_code);
+
 current = new Task; //kernel task
 current->index = next_index++;
 current->pl = 0;
@@ -271,8 +273,6 @@ current->tss->es = hal->sys_data;
 
 app_tss = hal->gdt->add_descriptor(new TSSDescriptor((unsigned int) current->tss));
 
-while(1);
-
 load_tr(app_tss);
 
 //SCHEDULER
@@ -287,21 +287,14 @@ task->wait_reason = wrDead;
 current->next = task;
 
 unsigned int stack_pl0 = (unsigned int) hal->mm->alloc(PL0_STACK_SIZE);
-stack_pl0 += PL0_STACK_SIZE * 0x1000 - 1;
+stack_pl0 += PL0_STACK_SIZE * 0x1000 - 4;
 
 task->tss = new TSS;
 
 task->tss->cr3 = (unsigned int)hal->pagedir;
 task->tss->eip = (unsigned int)&scheduler_wrapper;
-task->tss->trace = 0;
 
 task->tss->eflags = 0x202;
-task->tss->eax = 0;
-task->tss->ebx = 0;
-task->tss->ecx = 0;
-task->tss->edx = 0;
-task->tss->esi = 0;
-task->tss->edi = 0;
 
 task->tss->esp = stack_pl0;
 task->tss->ebp = stack_pl0;
@@ -310,14 +303,16 @@ task->tss->cs = hal->sys_code;
 task->tss->es = hal->sys_data;
 task->tss->ss = hal->sys_data;
 task->tss->ds = hal->sys_data;
-
 task->tss->fs = 0;
 task->tss->gs = 0;
+
+task->tss->trace = 0;
 task->tss->ldt = 0;
 task->tss->iomap = 0;
 
 sched_tss = hal->gdt->add_descriptor(new TSSDescriptor((unsigned int) task->tss));
-hal->idt->set_interrupt(0x20, &irq0, hal->sys_code);
+
+//printf("taskman: application tss = 0x%x, schedule tss = 0x%x\n", app_tss*8, sched_tss*8);
 }
 
 void TaskManager::load_tr(unsigned short descriptor)
@@ -343,5 +338,6 @@ else
 
 void TaskManager::schedule()
 {
+printf("t%ds\n", hal->taskman->current->index);
 asm("ljmp $0x30, $0");
 }

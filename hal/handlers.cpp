@@ -19,115 +19,284 @@
 #include <hal.h>
 #include <colors.h>
 
-void register_exceptions();
+#define SAFE_CURRENT_TASK hal->taskman ? hal->taskman->current ? hal->taskman->current->index : 0 : 0
 
-const char* exception_names[20] = {
-"Division By Zero",
-"Debug",
-"Non Maskable Interrupt",
-"Breakpoint",
-"Into Detected Overflow",
-"Out of Bounds",
-"Invalid Opcode",
-"No Coprocessor",
-"Double Fault",
-"Coprocessor Segment Overrun",
-"Bad TSS Exception",
-"Segment Not Present Exception",
-"Stack Fault Exception",
-"General Protection Fault",
-"Page Fault Exception",
-"Unknown Interrupt Exception",
-"Coprocessor Fault Exception",
-"Alignment Check",
-"Machine Check",
-"Unknown Exception"
-};
-
-void common_exception_handler(int number, int address, int errcode, HRegisters r)
+extern "C" void handle_page_fault(unsigned int address, unsigned int errcode, unsigned int eip)
 {
-hal->cli();
-hal->taskman->mt(false);
-unsigned int cr2;
-asm("mov %%cr2, %0":"=d"(cr2));
-printf("\n    %zException Occured (Task %i)!%z", YELLOW, hal->taskman->current->index, LIGHTGRAY); 
-printf(" EIP: %z%X%z", LIGHTGREEN, address, LIGHTGRAY);
-printf("\n    Error:%z ", LIGHTBLUE);
-printf(exception_names[number]);
-printf(" %zError Code:%z ", LIGHTGRAY, LIGHTBLUE);
-printf("%X%z", errcode, LIGHTGRAY);
-if(number == 0x0E)
- {
- if(errcode & 2)	printf("\n    %zWrite%z error: ", LIGHTRED, LIGHTGRAY);
- else			printf("\n    %zRead%z error: ", LIGHTGREEN, LIGHTGRAY);
- if(errcode & 1)	printf("%zpermission denied%z", YELLOW, LIGHTGRAY);
- else			printf("%zpage not found%z", YELLOW, LIGHTGRAY);
- if(errcode & 4)	printf(" at level %z3%z, ", LIGHTBLUE, LIGHTGRAY);
- else			printf(" at level %z0%z, ", LIGHTBLUE, LIGHTGRAY);
- printf("address %z%X%z", LIGHTGREEN, cr2, LIGHTGRAY);
- printf("\n    ESP: %X", r.esp);
- }
-if(hal->taskman->current->index == 0)
- {
- printf("\n      %zSystem halted.\n\n", LIGHTRED);
- kernel_backtrace();
- for(;;);
- }
-else
- {
- if(number == 0x0E)
-  printf("\n      %zTask will be terminated.%z\n\n", LIGHTRED, LIGHTGRAY);
- else
-  printf("\n      %zSystem halted.%z\n\n", LIGHTRED, LIGHTGRAY);
- hal->taskman->current->vmm->show();
- if(number == 0x0E)
-  {
-  kernel_backtrace();
-  /*int index = hal->taskman->current->index;
-  hal->taskman->kill(hal->taskman->current->index, 1);
-  hal->sti_c();*/
-  }
- while(1);
- }
+printf("\n Unresolved Page Fault (task %d)\n  Cannot %s 0x%X (%s) at level %d\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK,
+          errcode & 2 ? "write" : "read",
+          address,
+          errcode & 1 ? "permission denied" : "page not found",
+          errcode & 4 ? 3 : 0,
+          eip);
+kernel_backtrace();
 }
 
-EXCEPTION_HANDLER(exception0) { common_exception_handler(0, address, errcode, r); }
-EXCEPTION_HANDLER(exception1) { common_exception_handler(1, address, errcode, r); }
-EXCEPTION_HANDLER(exception2) { common_exception_handler(2, address, errcode, r); }
-EXCEPTION_HANDLER(exception3) { common_exception_handler(3, address, errcode, r); }
-EXCEPTION_HANDLER(exception4) { common_exception_handler(4, address, errcode, r); }
-EXCEPTION_HANDLER(exception5) { common_exception_handler(5, address, errcode, r); }
-EXCEPTION_HANDLER(exception6) { common_exception_handler(6, address, errcode, r); }
-EXCEPTION_HANDLER(exception7) { common_exception_handler(7, address, errcode, r); }
-EXCEPTION_HANDLER(exception8) { common_exception_handler(8, address, errcode, r); }
-EXCEPTION_HANDLER(exception9) { common_exception_handler(9, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionA) { common_exception_handler(10, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionB) { common_exception_handler(11, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionC) { common_exception_handler(12, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionD) { common_exception_handler(13, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionE) { common_exception_handler(14, address, errcode, r); }
-EXCEPTION_HANDLER(exceptionF) { common_exception_handler(15, address, errcode, r); }
-EXCEPTION_HANDLER(exception10) { common_exception_handler(16, address, errcode, r); }
-EXCEPTION_HANDLER(exception11) { common_exception_handler(17, address, errcode, r); }
-EXCEPTION_HANDLER(exception12) { common_exception_handler(18, address, errcode, r); }
-EXCEPTION_HANDLER(exception_unknown) { common_exception_handler(19, address, errcode, r); }
+extern "C" void handle_general_protection_fault(unsigned int errcode, unsigned int eip)
+{
+if(errcode == 0)
+ printf("\n General Protection Fault (task %d)\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK, 
+          eip);
+else
+ printf("\n General Protection Fault (task %d)\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK, 
+          eip); 
+}
 
-IRQ_HANDLER(irq0_handler)      { }
-IRQ_HANDLER(irq1_handler)      { hal->taskman->process_irq(1);  }
-IRQ_HANDLER(irq2_handler)      { hal->taskman->process_irq(2);  }
-IRQ_HANDLER(irq3_handler)      { hal->taskman->process_irq(3);  }
-IRQ_HANDLER(irq4_handler)      { hal->taskman->process_irq(4);  }
-IRQ_HANDLER(irq5_handler)      { hal->taskman->process_irq(5);  }
-IRQ_HANDLER(irq6_handler)      { hal->taskman->process_irq(6);  }
-IRQ_HANDLER(irq7_handler)      { hal->taskman->process_irq(7);  }
-IRQ_HANDLER_HIGH(irq8_handler) { hal->taskman->process_irq(8);  }
-IRQ_HANDLER_HIGH(irq9_handler) { hal->taskman->process_irq(9);  }
-IRQ_HANDLER_HIGH(irqa_handler) { hal->taskman->process_irq(10); }
-IRQ_HANDLER_HIGH(irqb_handler) { hal->taskman->process_irq(11); }
-IRQ_HANDLER_HIGH(irqc_handler) { hal->taskman->process_irq(12); }
-IRQ_HANDLER_HIGH(irqd_handler) { hal->taskman->process_irq(13); }
-IRQ_HANDLER_HIGH(irqe_handler) { hal->taskman->process_irq(14); }
-IRQ_HANDLER_HIGH(irqf_handler) { hal->taskman->process_irq(15); }
+extern "C" void handle_segment_not_present(unsigned int errcode, unsigned int eip)
+{
+printf("\n Segment Not Present (task %d)\n  Event: %s; selector: %X (in %s)\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK,
+          errcode & 1 ? "external" : "internal",
+          errcode & 0xFFFC,
+          errcode & 2 ? "IDT" : "GDT",
+          eip);
+}
+
+extern "C" void handle_stack_fault(unsigned int errcode, unsigned int eip)
+{
+if(errcode == 0)
+ printf("\n Stack Fault (task %d)\n  Stack Limit Exceeded\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK,
+          eip);
+else
+ printf("\n Stack Fault (task %d)\n  Selector: %X\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK,
+          errcode,
+          eip);
+}
+
+extern "C" void exception0();
+extern "C" void exception1();
+extern "C" void exception2();
+extern "C" void exception3();
+extern "C" void exception4();
+extern "C" void exception5();
+extern "C" void exception6();
+extern "C" void exception7();
+extern "C" void exception8();
+extern "C" void exception9();
+extern "C" void exceptionA();
+extern "C" void exceptionB();
+extern "C" void exceptionC();
+extern "C" void exceptionD();
+extern "C" void exceptionE();
+extern "C" void exception10();
+extern "C" void exception11();
+extern "C" void exception12();
+extern "C" void exception13();
+extern "C" void exception_unknown();
+
+asm( //#DE Division By Zero: fault, no errcode
+ ".globl exception0\n"
+ "exception0:\n"
+ "cli\n"
+ "movb $0x30, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop0: jmp loop0\n"
+ );
+
+asm( //#DB Debug: trap/fault (see IA manual)
+ ".globl exception1\n"
+ "exception1:\n"
+ "cli\n"
+ "movb $0x31, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop1: jmp loop1\n"
+ );
+
+asm( //NMI interrupt, really not an exception
+ ".globl exception2\n"
+ "exception2:\n"
+ "cli\n"
+ "movb $0x32, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop2: jmp loop2\n"
+ );
+
+asm( //#BP Breakpoint: trap, no errcode
+ ".globl exception3\n"
+ "exception3:\n"
+ "cli\n"
+ "movb $0x33, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop3: jmp loop3\n"
+ );
+
+asm( //#OF Owerflow: trap, no errcode
+ ".globl exception4\n"
+ "exception4:\n"
+ "cli\n"
+ "movb $0x34, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop4: jmp loop4\n"
+ );
+
+asm( //#BR Bound Range Exceeded, fault, no errcode
+ ".globl exception5\n"
+ "exception5:\n"
+ "cli\n"
+ "movb $0x35, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop5: jmp loop5\n"
+ );
+
+asm( //#UD Invalid Opcode, fault, no errcode
+ ".globl exception6\n"
+ "exception6:\n"
+ "cli\n"
+ "movb $0x36, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop6: jmp loop6\n"
+ );
+
+asm( //#NM Device Not avaliable, fault, no errcode
+ ".globl exception7\n"
+ "exception7:\n"
+ "cli\n"
+ "movb $0x37, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop7: jmp loop7\n"
+ );
+
+asm( //#DF Double Fault, abort, errcode = 0
+ ".globl exception8\n"
+ "exception8:\n"
+ "cli\n"
+ "movb $0x38, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop8: jmp loop8\n"
+ );
+
+asm( //Reserved, abort, no errcode
+ ".globl exception9\n"
+ "exception9:\n"
+ "cli\n"
+ "movb $0x39, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop9: jmp loop9\n"
+ );
+
+asm( //#TS Invalid TSS, fault, errcode = selector
+ ".globl exceptionA\n"
+ "exceptionA:\n"
+ "cli\n"
+ "movb $65, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loopA: jmp loopA\n"
+ );
+
+asm( //#NP Segment Not Present, fault, errcode = selector
+ ".globl exceptionB\n"
+ "exceptionB:\n"
+ "cli\n"
+ "movb $66, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "call handle_segment_not_present\n"
+ "loopB: jmp loopB\n"
+ );
+
+asm( //#SS Stack Fault, fault, errcode = { 0 => limit violation, !0 => selector }
+ ".globl exceptionC\n"
+ "exceptionC:\n"
+ "cli\n"
+ "movb $67, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "call handle_stack_fault\n"
+ "loopC: jmp loopC\n"
+ );
+
+asm( //#GP General Protection Fault, fault, errcode = { !0 => loading selector, 0 => * }
+ ".globl exceptionD\n"
+ "exceptionD:\n"
+ "cli\n"
+ "movb $68, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "call handle_general_protection_fault\n"
+ "loopD: jmp loopD\n"
+ );
+
+asm( //#PF Page Fault, fault, errcode = see manual, cr2 = linear address
+ ".globl exceptionE\n"
+ "exceptionE:\n"
+ "cli\n"
+ "movb $69, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "movl %cr2, %eax\n"
+ "pushl %eax\n"
+ "call handle_page_fault\n"
+ "loopE: jmp loopE\n"
+ );
+
+asm( //#MF Floating Point Error, fault, no errcode
+ ".globl exception10\n"
+ "exception10:\n"
+ "cli\n"
+ "movb $70, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop10: jmp loop10\n"
+ );
+
+asm( //#AC Alignment Check, fault, errcode = 0
+ ".globl exception11\n"
+ "exception11:\n"
+ "cli\n"
+ "movb $0x31, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "movb $0x31, 0xb8002\n"
+ "movb $0x04, 0xb8003\n"
+ "loop11: jmp loop11\n"
+ );
+
+asm( //#MC Machine Check, abort, no errcode
+ ".globl exception12\n"
+ "exception12:\n"
+ "cli\n"
+ "movb $0x31, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "movb $0x32, 0xb8002\n"
+ "movb $0x04, 0xb8003\n"
+ "loop12: jmp loop12\n"
+ );
+
+asm( //#XF, SIMD Floating Point Exception, fault, no errcode
+ ".globl exception13\n"
+ "exception13:\n"
+ "cli\n"
+ "movb $0x31, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "movb $0x33, 0xb8002\n"
+ "movb $0x04, 0xb8003\n"
+ "loop13: jmp loop13\n"
+ );
+
+asm(
+ ".globl exception_unknown\n"
+ "exception_unknown:\n"
+ "cli\n"
+ "movb $0x1, 0xb8000\n"
+ "movb $0x04, 0xb8001\n"
+ "loop_u: jmp loop_u\n"
+ );
+
+IRQ_HANDLER(irq0_handler) { printf("."); }
+IRQ_HANDLER(irq1_handler) { hal->taskman->process_irq(1);  }
+IRQ_HANDLER(irq2_handler) { hal->taskman->process_irq(2);  }
+IRQ_HANDLER(irq3_handler) { hal->taskman->process_irq(3);  }
+IRQ_HANDLER(irq4_handler) { hal->taskman->process_irq(4);  }
+IRQ_HANDLER(irq5_handler) { hal->taskman->process_irq(5);  }
+IRQ_HANDLER(irq6_handler) { hal->taskman->process_irq(6);  }
+IRQ_HANDLER(irq7_handler) { /*hal->taskman->process_irq(7);*/  }
+IRQ_HANDLER(irq8_handler) { hal->taskman->process_irq(8);  }
+IRQ_HANDLER(irq9_handler) { hal->taskman->process_irq(9);  }
+IRQ_HANDLER(irqa_handler) { hal->taskman->process_irq(10); }
+IRQ_HANDLER(irqb_handler) { hal->taskman->process_irq(11); }
+IRQ_HANDLER(irqc_handler) { hal->taskman->process_irq(12); }
+IRQ_HANDLER(irqd_handler) { hal->taskman->process_irq(13); }
+IRQ_HANDLER(irqe_handler) { hal->taskman->process_irq(14); }
+IRQ_HANDLER(irqf_handler) { hal->taskman->process_irq(15); }
 
 void IDT::register_exceptions()
 {
@@ -146,11 +315,10 @@ set_trap(0x0b, MAKE_ISR(exceptionB), hal->sys_code);
 set_trap(0x0c, MAKE_ISR(exceptionC), hal->sys_code);
 set_trap(0x0d, MAKE_ISR(exceptionD), hal->sys_code);
 set_trap(0x0e, MAKE_ISR(exceptionE), hal->sys_code);
-set_trap(0x0f, MAKE_ISR(exceptionF), hal->sys_code);
 set_trap(0x10, MAKE_ISR(exception10), hal->sys_code);
 set_trap(0x11, MAKE_ISR(exception11), hal->sys_code);
 set_trap(0x12, MAKE_ISR(exception12), hal->sys_code);
-set_trap(0x13, MAKE_ISR(exception_unknown), hal->sys_code);
+set_trap(0x13, MAKE_ISR(exception13), hal->sys_code);
 set_trap(0x14, MAKE_ISR(exception_unknown), hal->sys_code);
 set_trap(0x15, MAKE_ISR(exception_unknown), hal->sys_code);
 set_trap(0x16, MAKE_ISR(exception_unknown), hal->sys_code);

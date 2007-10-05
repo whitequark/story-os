@@ -42,7 +42,8 @@ show();
 
 void* MemoryManager::alloc(unsigned int count, bool no_merge)
 {
-hal->taskman->mt(false);
+if(hal->taskman)
+ hal->taskman->mt(false);
 MemoryBlock *cmb, *nmb; //current memory block, next -//-, first -//- (lower)
 for(cmb = mb; cmb != NULL; cmb = cmb->next)
  if(cmb->count >= count && cmb->allocated == false)
@@ -67,14 +68,16 @@ if(cmb->count != count)
  cmb->next = fmb; //insert free fmb in the middle of vmb and nmb
  }
 free_pages -= count;
-hal->taskman->mt(true);
+if(hal->taskman)
+ hal->taskman->mt(true);
 return (void*) (cmb->first << 12);
 }
 
 void MemoryManager::free(void* address)
 {
 unsigned int page = ((unsigned int) address) >> 12;
-hal->taskman->mt(false);
+if(hal->taskman)
+ hal->taskman->mt(false);
 MemoryBlock *cmb; //current memory block
 for(cmb = mb; cmb != NULL; cmb = cmb->next)
  if(cmb->first == page)
@@ -85,7 +88,8 @@ if(cmb->allocated == false)
  return;
 cmb->allocated = false;
 free_pages += cmb->count;
-hal->taskman->mt(true);
+if(hal->taskman)
+ hal->taskman->mt(true);
 }
 
 unsigned int MemoryManager::free_memory()

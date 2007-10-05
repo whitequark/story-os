@@ -136,7 +136,7 @@ unsigned int *fp, i, address;
 
 asm volatile ("movl %%ebp, %0" : "=r" (fp));
 
-printf("    Call trace:\n");
+printf("  Call trace:\n");
 
 for (i = 0; i < 15; i++) 
  {
@@ -144,6 +144,8 @@ for (i = 0; i < 15; i++)
  if (!(*(fp + 1) && *fp))
   break;
  address = *(fp + 1);
+ if(address < 0x100000)
+  break;
  
  _function f;
  f.address = 0;
@@ -153,12 +155,10 @@ for (i = 0; i < 15; i++)
   f = get_function(tab2, address);
   
  if(f.name != 0)
-  printf("      %z%x%z: [%z<%X>%z] %z%s%z+0x%x\n", address < 0x10000000 ? LIGHTRED : LIGHTGREEN, i, LIGHTGRAY, LIGHTGREEN, address, LIGHTGRAY, LIGHTBLUE, f.name, LIGHTGRAY, address - f.address);
+  printf("    [<%X>] %s+0x%x\n", address, f.name, address - f.address);
  else
-  printf("      %z%x%z: [%z<%X>%z] (unknown)\n", address < 0x10000000 ? LIGHTRED : LIGHTGREEN, i, LIGHTGRAY, LIGHTRED, address, LIGHTGRAY);
+  printf("    [<%X>] (unknown)\n", address);
  }
-printf(" =====^^=%zKRN%z/%zUSR%z==^^=%zRES%z/%zUNK%z==^^=%zFUNC%z+OFFSET===================================\n", LIGHTRED, LIGHTGRAY, LIGHTGREEN, LIGHTGRAY,
-	LIGHTGREEN, LIGHTGRAY, LIGHTRED, LIGHTGRAY, LIGHTBLUE, LIGHTGRAY);
 }
 
 void user_backtrace()
