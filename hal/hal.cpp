@@ -34,22 +34,6 @@ vprintf(fmt, vl);
 for(;;);
 }
 
-void HAL::sti_c()
-{
-int_block_count--;
-if(int_block_count < 0)
- {
- int_block_count = 0;
- sti();
- } 
-}
-
-void HAL::cli_c()
-{
-int_block_count++;
-cli();
-}
-
 void HAL::sti()
 {
 asm("sti");

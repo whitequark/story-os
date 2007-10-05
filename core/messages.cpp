@@ -5,7 +5,6 @@
 
 unsigned int syscall_message_send(Registers r)
 {
-hal->cli_c();
 Message *msg = ((Message*)r.ebx);
 if(msg == NULL)
  return MSG_ERROR;
@@ -76,13 +75,11 @@ if(msg->reply_length != 0)
 
 delete reply;
 
-hal->sti_c();
 return MSG_OK;
 }
 
 unsigned int syscall_message_receive(Registers r)
 {
-hal->cli_c();
 Task* curr = hal->taskman->current;
 if(curr->messages == NULL)
  {
@@ -112,13 +109,11 @@ umsg->data_received = msg->data_length;
 msg->data_received = umsg->data_length;
 umsg->reply_length = msg->reply_length;
 
-hal->sti_c();
 return MSG_OK;
 }
 
 unsigned int syscall_message_reply(Registers r)
 {
-hal->cli_c();
 Task* curr = hal->taskman->current;
 Message *msg = curr->messages->item, *umsg = (Message*) r.ebx;
 Task* dest = hal->taskman->task(msg->sender);
@@ -147,13 +142,11 @@ List<Message*>* next = curr->messages->next;
 delete curr->messages;
 curr->messages = next;
 
-hal->sti_c();
 return MSG_OK;
 }
 
 unsigned int syscall_message_forward(Registers r)
 {
-hal->cli_c();
 Task* curr = hal->taskman->current;
 Message *umsg = (Message*) r.ebx;
 List<Message*>* cmsg = curr->messages;
@@ -193,7 +186,6 @@ if(dest->wait_reason == wrMessage)
  dest->resume_reason = rrOk;
  }
 
-hal->sti_c();
 return MSG_OK;
 }
 

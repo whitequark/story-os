@@ -45,6 +45,7 @@ load_cr3(hal->pagedir);
 
 unsigned int Paging::get_pte(PageDirectory* pagedir, unsigned int page)
 {
+page_mutex.lock();
 PageTable* table = (PageTable*) (pagedir->table[page >> 10] & 0xFFFFF000);
 if(table == NULL)
  {
@@ -52,12 +53,13 @@ if(table == NULL)
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
+page_mutex.unlock();
 return table->page[page & 0x3F];
 }
 
 void Paging::set_pte(PageDirectory* pagedir, unsigned int page, unsigned int value)
 {
-hal->cli_c();
+page_mutex.lock();
 PageTable* table = (PageTable*) (pagedir->table[page >> 10] & 0xFFFFF000);
 if(table == NULL)
  {
@@ -66,12 +68,14 @@ if(table == NULL)
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
 table->page[page & 0x3F] = value;
-hal->sti_c();
+page_mutex.unlock();
 }
 
 void Paging::load_cr3(PageDirectory* cr3)
 {
+page_mutex.lock();
 asm("mov %0, %%eax \n mov %%eax, %%cr3"::"a"(cr3));
+page_mutex.unlock();
 }
 
 void Paging::enable()

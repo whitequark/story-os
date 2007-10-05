@@ -10,7 +10,7 @@
       <part>kdevrbdebugger</part>
       <part>kdevvisualboyadvance</part>
     </ignoreparts>
-    <projectdirectory>/root/story-os/trunk</projectdirectory>
+    <projectdirectory>/home/quark-local/story-os/trunk</projectdirectory>
     <absoluteprojectpath>true</absoluteprojectpath>
     <description/>
     <versioncontrol>kdevsubversion</versioncontrol>
@@ -21,13 +21,13 @@
     <run>
       <mainprogram>run.sh</mainprogram>
       <directoryradio>custom</directoryradio>
-      <customdirectory>/root/story-os/trunk</customdirectory>
+      <customdirectory>/home/quark-local/story-os/trunk</customdirectory>
       <programargs/>
       <terminal>false</terminal>
       <autocompile>true</autocompile>
       <envvars/>
       <globaldebugarguments/>
-      <globalcwd>/root/story-os/trunk</globalcwd>
+      <globalcwd>/home/quark-local/story-os/trunk</globalcwd>
       <useglobalprogram>false</useglobalprogram>
       <autoinstall>false</autoinstall>
       <autokdesu>false</autokdesu>
@@ -146,10 +146,10 @@
   </kdevdoctreeview>
   <kdevfilecreate>
     <filetypes>
-      <type icon="source_h" ext="h" name="C/C++ Header" create="template" >
+      <type icon="source_h" ext="h" create="template" name="C/C++ Header" >
         <descr>A new empty header file for C or C++.</descr>
       </type>
-      <type icon="source_cpp" ext="cpp" name="C++ Source" create="template" >
+      <type icon="source_cpp" ext="cpp" create="template" name="C++ Source" >
         <descr>A new empty C++ file.</descr>
       </type>
     </filetypes>
@@ -210,7 +210,7 @@
       <root>/usr/share/qt3</root>
       <designerintegration>EmbeddedKDevDesigner</designerintegration>
       <qmake>/usr/bin/qmake-qt3</qmake>
-      <designer></designer>
+      <designer/>
       <designerpluginpaths/>
     </qt>
     <splitheadersource>

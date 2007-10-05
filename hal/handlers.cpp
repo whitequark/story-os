@@ -46,7 +46,8 @@ const char* exception_names[20] = {
 
 void common_exception_handler(int number, int address, int errcode, HRegisters r)
 {
-hal->cli_c();
+hal->cli();
+hal->taskman->mt(false);
 unsigned int cr2;
 asm("mov %%cr2, %0":"=d"(cr2));
 printf("\n    %zException Occured (Task %i)!%z", YELLOW, hal->taskman->current->index, LIGHTGRAY); 
@@ -111,7 +112,7 @@ EXCEPTION_HANDLER(exception11) { common_exception_handler(17, address, errcode, 
 EXCEPTION_HANDLER(exception12) { common_exception_handler(18, address, errcode, r); }
 EXCEPTION_HANDLER(exception_unknown) { common_exception_handler(19, address, errcode, r); }
 
-IRQ_HANDLER(irq0_handler)      { hal->taskman->process_irq(0);  }
+IRQ_HANDLER(irq0_handler)      { }
 IRQ_HANDLER(irq1_handler)      { hal->taskman->process_irq(1);  }
 IRQ_HANDLER(irq2_handler)      { hal->taskman->process_irq(2);  }
 IRQ_HANDLER(irq3_handler)      { hal->taskman->process_irq(3);  }

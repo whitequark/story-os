@@ -104,30 +104,30 @@ else
 int GDT::add_descriptor(GDTDescriptor* desc)
 {
 char* bytes = desc->get_bytes();
-hal->cli_c(); //this must be ATOMIC operation
+hal->taskman->mt(false); //this must be ATOMIC operation
 memcpy((void*) ((unsigned int) gdt + 8*count), bytes, 8);
 count++;
 if(installed)
  install(); //see GDT::install()
-hal->sti_c();
+hal->taskman->mt(true);
 return count - 1;
 }
 
 void GDT::modify_descriptor(GDTDescriptor* desc, unsigned short number)
 {
-hal->cli_c();
+hal->taskman->mt(false);
 char* bytes = desc->get_bytes();
 memcpy((void*) ((unsigned int) gdt + 8*number), bytes, 8);
-hal->sti_c();
+hal->taskman->mt(true);
 }
 
 void GDT::install()
 {
-hal->cli_c();
+hal->taskman->mt(false);
 _gdt_register.limit = count * 8;
 _gdt_register.address = (unsigned int) &gdt;
 asm("lgdt _gdt_register\n");
-hal->sti_c();
+hal->taskman->mt(true);
 
 installed = true;
 //If gdt is already installed, adding a descriptor MUST cause a reinstall(limit updating)

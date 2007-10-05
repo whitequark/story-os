@@ -1,6 +1,8 @@
 #ifndef _PAGING_H_
 #define _PAGING_H_
 
+#include <mutex.h>
+
 #define PAGE_PRESENT 0x1
 #define PAGE_WRITABLE 0x2
 #define PAGE_USER 0x4
@@ -19,6 +21,9 @@ PageFrame page[1024];
 
 class Paging
 {
+private:
+Mutex page_mutex;
+
 public:
 Paging();
 void enable();

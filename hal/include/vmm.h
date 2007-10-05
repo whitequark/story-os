@@ -23,6 +23,7 @@ PageDirectory* directory;
 VMemoryBlock* mb;
 int threads;
 void merge();
+Mutex memory_mutex;
 
 public:
 VirtualMemoryManager();

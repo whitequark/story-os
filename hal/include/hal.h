@@ -79,8 +79,6 @@ unsigned short inline inw(unsigned short port)
 
 void cli();
 void sti();
-void cli_c(); //with counter
-void sti_c();
 
 void panic(char*, ...);
 

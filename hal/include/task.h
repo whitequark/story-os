@@ -98,20 +98,25 @@ unsigned short sched_tss;
 void load_tr(unsigned short descriptor);
 bool scheduling;
 void run_task(Task* task);
-Mutex task_mutex;
 
 public:
 Task* current;
 TaskManager();
+bool scheduler_running;
+bool no_schedule;
+bool scheduler_started;
+
 bool kill(unsigned int index, unsigned int return_code = 1);
 void process_irq(unsigned int number);
-void scheduler();
 Task* create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm, unsigned int push = 0, unsigned int* data = NULL);
-bool scheduler_running;
 Task* task(unsigned int index);
 void schedule();
 void status();
-bool no_schedule;
+
+void mt(bool enable);
+void start();
+
+void scheduler();
 };
 
 #endif

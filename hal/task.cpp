@@ -38,8 +38,8 @@ while(1)
     if(*((unsigned int*) current->wait_object) != 0)
      current->wait_reason = wrNone;
    if(current->wait_reason == wrTaskDie)
-    if(hal->taskman->task(current->wait_object) != NULL)
-     if(hal->taskman->task(current->wait_object)->wait_reason == wrDead)
+    if(task(current->wait_object) != NULL)
+     if(task(current->wait_object)->wait_reason == wrDead)
       current->wait_reason = wrNone;
    }
   while(current->wait_reason != wrNone || current->priority == 0);
@@ -60,16 +60,6 @@ hal->taskman->scheduler();
 
 extern "C" void timer_handler()
 {
-static int d;
-const int p = 300;
-if(d == p*4) d = 0;
-/*if(d > p * 2)
- { hal->outb(0x0a, 0x3d4); hal->outb(12, 0x3d5);
-   hal->outb(0x0b, 0x3d4); hal->outb(13, 0x3d5); } 
-else 
- { hal->outb(0x0a, 0x3d4); hal->outb(32, 0x3d5);
-   hal->outb(0x0b, 0x3d4); hal->outb(32, 0x3d5); }*/
-
 hal->clock->tick();
 
 int n;
@@ -84,7 +74,7 @@ for(n = 0, t = hal->taskman->current; t != hal->taskman->current || n == 0; n++,
 
 hal->outb(0x20, 0x20);
 
-if(!hal->taskman->scheduler_running && !hal->taskman->no_schedule)
+if(!hal->taskman->scheduler_running && !hal->taskman->no_schedule && hal->taskman->scheduler_started)
  {
  hal->taskman->scheduler_running = true;
  hal->taskman->schedule();
@@ -116,7 +106,7 @@ asm(
 bool TaskManager::kill(unsigned int index, unsigned int return_code)
 {
 Task *t, *r;
-task_mutex.lock();
+mt(false);
 if(index == current->index)
  t = current;
 else
@@ -129,7 +119,7 @@ t->wait_reason = wrDead;
 if(t->vmm->change_threads(-1) == 0)
  delete t->vmm;
 
-task_mutex.unlock();
+mt(true);
 return true;
 }
 
@@ -140,7 +130,7 @@ core->process_irq(number);
 
 Task* TaskManager::create_task(unsigned int pl, unsigned int entry, unsigned int priority, VirtualMemoryManager* vmm, unsigned int push, unsigned int* data)
 {
-task_mutex.lock();
+mt(false);
 Task* task = new Task;
 task->wait_reason = wrPaused;
 task->index = next_index++;
@@ -193,7 +183,7 @@ task->reply = NULL;
 
 task->descriptor = new TSSDescriptor((unsigned int)task->tss);
 
-task_mutex.unlock();
+mt(true);
 return task;
 }
 
@@ -243,13 +233,23 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
  }
 }
 
+void TaskManager::mt(bool enable)
+{
+no_schedule = !enable;
+}
+
+void TaskManager::start()
+{
+scheduler_started = true;
+}
+
 TaskManager::TaskManager()
 {
 next_index = 0;
 ticks_remaining = 0;
 scheduler_running = false;
-
-hal->idt->set_interrupt(0x20, &irq0, hal->sys_code);
+scheduler_started = false;
+no_schedule = true;
 
 current = new Task; //kernel task
 current->index = next_index++;
@@ -270,6 +270,9 @@ current->tss->ss = hal->sys_data;
 current->tss->es = hal->sys_data;
 
 app_tss = hal->gdt->add_descriptor(new TSSDescriptor((unsigned int) current->tss));
+
+while(1);
+
 load_tr(app_tss);
 
 //SCHEDULER
@@ -314,6 +317,7 @@ task->tss->ldt = 0;
 task->tss->iomap = 0;
 
 sched_tss = hal->gdt->add_descriptor(new TSSDescriptor((unsigned int) task->tss));
+hal->idt->set_interrupt(0x20, &irq0, hal->sys_code);
 }
 
 void TaskManager::load_tr(unsigned short descriptor)
