@@ -91,10 +91,10 @@ installed = false;
 void GDT::show()
 {
 int i;
-printf("GDT:\n");
+printf(" GDT:\n");
 if(count > 0)
  for(i = 0; i < count; i++)
-  printf("Descriptor %i: %x %x %x %x %x %x %x %x\n", i, gdt[8*i+0], gdt[8*i+1], gdt[8*i+2], gdt[8*i+3], gdt[8*i+4], gdt[8*i+5], gdt[8*i+6], gdt[8*i+7]);
+  printf("  Descriptor %i: %x %x %x %x %x %x %x %x\n", i, gdt[8*i+0], gdt[8*i+1], gdt[8*i+2], gdt[8*i+3], gdt[8*i+4], gdt[8*i+5], gdt[8*i+6], gdt[8*i+7]);
 else
  printf("%zNo descriptors%z\n", LIGHTRED, LIGHTGRAY);
 }

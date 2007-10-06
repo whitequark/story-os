@@ -44,7 +44,7 @@ while(1)
    }
   while(current->wait_reason != wrNone || current->priority == 0);
   unsigned int newi = current->index;
-  printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
+  //printf("%z%i>%i%z ", YELLOW, oldi, newi, LIGHTGRAY);
   scheduler_running = false;
   run_task(current);
   }
@@ -55,6 +55,7 @@ while(1)
 
 extern "C" void scheduler_wrapper()
 {
+hal->cli();
 hal->taskman->scheduler();
 }
 
@@ -241,6 +242,7 @@ no_schedule = !enable;
 void TaskManager::start()
 {
 scheduler_started = true;
+asm("ljmp $0x30, $0");
 }
 
 TaskManager::TaskManager()
@@ -338,6 +340,6 @@ else
 
 void TaskManager::schedule()
 {
-printf("t%ds\n", hal->taskman->current->index);
+//printf("t%ds\n", hal->taskman->current->index);
 asm("ljmp $0x30, $0");
 }

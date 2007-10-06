@@ -40,9 +40,13 @@ if(errcode == 0)
           SAFE_CURRENT_TASK, 
           eip);
 else
- printf("\n General Protection Fault (task %d)\n  EIP: %X\n", 
-          SAFE_CURRENT_TASK, 
-          eip); 
+ {
+ printf("\n General Protection Fault (task %d)\n  Selector: %X\n  EIP: %X\n", 
+          SAFE_CURRENT_TASK,
+          errcode,
+          eip);
+ hal->gdt->show();
+ }
 }
 
 extern "C" void handle_segment_not_present(unsigned int errcode, unsigned int eip)
