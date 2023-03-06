@@ -77,7 +77,7 @@ if(multiboot_info->mods_count != 0)
   mm_position = mod->mod_end + 0x1000;
  }
 
-MemoryManager* mm = new (mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024 + 0x100000);
+MemoryManager* mm = new ((void*) mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024 + 0x100000);
 
 kinit_malloc();
 

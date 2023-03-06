@@ -37,22 +37,12 @@ void operator delete[](void* p)
 free(p);
 }
 
-void* operator new(unsigned int, unsigned int p)
+void* operator new(size_t, void* p)
 {
-return (void*)p; 
+return p;
 }
 
-void* operator new[](unsigned int, unsigned int p)
+void* operator new[](size_t, void* p)
 {
-return (void*)p;
-}
-
-void* operator new(unsigned int, void* p)
-{
-return operator new(0, (unsigned int)p);
-}
-
-void* operator new[](unsigned int, void* p)
-{
-return operator new[](0, (unsigned int)p);
+return p;
 }
