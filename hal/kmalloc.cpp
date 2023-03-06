@@ -60,14 +60,14 @@ for(i = first; i; i = i->next)
  if(i->next == NULL)
   last = i;
  }
-unsigned int fullsize = bytes_to_pages(size) * 0x1000;
-mb *na = (mb*) kmorecore(bytes_to_pages(size)), *nb;
+unsigned int pages = bytes_to_pages(sizeof(mb) + size + sizeof(mb));
+mb *na = (mb*) kmorecore(pages), *nb;
 if(na == NULL)
  return NULL;
 na->size = size;
 na->free = false;
 nb = (mb*) ((unsigned int) na + sizeof(mb) + size);
-nb->size = bytes_to_pages(size) * 0x1000 - size - 2 * sizeof(mb);
+nb->size = pages * 0x1000 - sizeof(mb) - size - sizeof(mb);
 nb->free = true;
 na->next = nb;
 nb->next = NULL;
