@@ -106,6 +106,8 @@ hal->panic("Attempt to free unallocated address %X", addr);
 void* kcalloc(unsigned int size, unsigned int count)
 {
 void* mem = kmalloc(size * count);
+if(mem == NULL)
+ return mem;
 memset(mem, 0, size * count);
 return mem;
 }
