@@ -1,6 +1,7 @@
 #include <hal.h>
 #include <string.h>
 
+#define ALIGNMENT 16
 #define RESERVED_BLOCK_SIZE 100
 
 struct mb
@@ -8,6 +9,7 @@ struct mb
  unsigned int size;
  bool free;
  mb* next;
+ void *_padding;
  };
 
 char mblock0[0x1000];
@@ -33,6 +35,7 @@ return mem;
 void* kmalloc(unsigned int size)
 {
 mb *i, *last;
+size = (size | (ALIGNMENT - 1)) + 1; // align up
 for(i = first; i; i = i->next)
  {
  if(i->free)
@@ -42,7 +45,7 @@ for(i = first; i; i = i->next)
    i->free = false;
    return (void*) ((unsigned int) i + sizeof(mb));
    }
-  else if(i->size > size + sizeof(mb))
+  else if(i->size > size + sizeof(mb) + ALIGNMENT)
    {
    mb* n = (mb*) ((unsigned int) i + size + sizeof(mb));
    n->free = true;
