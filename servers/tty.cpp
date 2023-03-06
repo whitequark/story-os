@@ -474,9 +474,6 @@ threads_mutex.unlock();
 tprintf("tty: initialized\n");
 
 start_thread(&stdin_thread);
-start_thread(&stdin_thread);
-
-while(1);
 
 while(1)
  {
