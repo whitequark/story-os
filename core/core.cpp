@@ -203,6 +203,7 @@ while(1)
   
   case pcStartThread:
   n = hal->taskman->create_task(3, msg.value1, 1, sender->vmm, 1, &msg.value2);
+  sender->vmm->change_threads(+1);
   n->tss->eflags |= 0x3000;
   n->wait_reason = wrNone;
   msg.value1 = n->index;
