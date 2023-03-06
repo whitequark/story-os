@@ -40,12 +40,12 @@ for(i = first; i; i = i->next)
  {
  if(i->free)
   {
-  if(i->size == size)
+  if(i->size >= size && i->size < size + sizeof(mb) + ALIGNMENT)
    {
    i->free = false;
    return (void*) ((unsigned int) i + sizeof(mb));
    }
-  else if(i->size > size + sizeof(mb) + ALIGNMENT)
+  else if(i->size >= size + sizeof(mb) + ALIGNMENT)
    {
    mb* n = (mb*) ((unsigned int) i + size + sizeof(mb));
    n->free = true;
