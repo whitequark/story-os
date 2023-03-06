@@ -1,5 +1,5 @@
-CFLAGS=-m32 -w -c -Wall -g2 -nostartfiles -nostdlib -fno-rtti -fno-exceptions -fno-leading-underscore -fno-stack-protector
-ROOT=$(HOME)/story-os-code2
+CFLAGS=-m32 -std=c++11 -w -c -Wall -g2 -nostartfiles -nostdlib -fno-rtti -fno-exceptions -fno-leading-underscore -fno-stack-protector
+ROOT=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 INCDIR=-I$(ROOT)/include -I$(ROOT)/lib/include -I$(ROOT)/hal/include -I$(ROOT)/core/include -I$(ROOT)/user/include -I$(ROOT)/core/drivers/include -I$(ROOT)/api/include -I$(ROOT)/servers/include
 LIB=$(ROOT)/lib/*.o
 API=$(ROOT)/api/*.o
