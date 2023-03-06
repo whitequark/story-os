@@ -1,3 +1,2 @@
 #!/bin/sh
-bochs
-#qemu -cdrom disk.iso -s -no-kqemu
+qemu-system-i386 -cdrom disk.iso -serial stdio -s

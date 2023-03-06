@@ -114,11 +114,13 @@ KernelTerminal::KernelTerminal() : lfb((short unsigned*)hal->lfb), cursorx(0), c
 color = LIGHTGRAY;
 }
 
+#define UART0_THR       0x3F8
 #define VGA_CRT_IC      0x3D4
 #define VGA_CRT_DC      0x3D5
 
 void KernelTerminal::put_char(char ch)
 {
+hal->outb(UART0_THR, ch);
 if(ch == 0)
  return;
 if(ch != '\n')
