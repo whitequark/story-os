@@ -69,17 +69,19 @@ extern "C" void breakpoint();
 
 extern "C" void entry(unsigned long magic, multiboot_info_t* multiboot_info)
 {
-unsigned int mm_position = 0x00400000;
+kinit_malloc();
+
+unsigned int first_usable = 0x00400000, free_total;
 if(multiboot_info->mods_count != 0)
  {
  module_t* mod;
  for(mod = (module_t*)multiboot_info->mods_addr; mod->mod_start != NULL; mod++)
-  mm_position = mod->mod_end + 0x1000;
+  first_usable = (mod->mod_end | (0x1000 - 1)) + 1;
  }
+free_total = multiboot_info->mem_upper * 1024 + 0x100000 - first_usable;
 
-MemoryManager* mm = new ((void*) mm_position) MemoryManager(mm_position + sizeof(*mm) + 0x1000, multiboot_info->mem_upper * 1024 + 0x100000);
-
-kinit_malloc();
+printf("memory at 0x%X: <-> 0x%X\n", first_usable, free_total);
+MemoryManager* mm = new MemoryManager(first_usable, free_total);
 
 hal = new HAL(multiboot_info);
 hal->mm = mm;
