@@ -11,7 +11,7 @@ all:
 	@make -C servers
 	@make -C apps
 	@echo "  Linking        kernel"
-	@ld -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386
+	@ld -melf_i386 -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386
 	
 	@expr `cat .build` + 1 > .build
 	@echo "/* include/version.h" > include/version.h
@@ -28,7 +28,7 @@ all:
 	@cp COPYING disk/
 	
 	@echo "Building ISO image"
-	@mkisofs -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Catherine 'whitequark' <admin@story.osdev.ru>" -o disk.iso disk
+	@genisoimage -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Catherine 'whitequark' <admin@story.osdev.ru>" -o disk.iso disk
 	
 clean:
 	@find ./ -name "*.o" -exec rm {} \;
