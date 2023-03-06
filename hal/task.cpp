@@ -236,7 +236,14 @@ for(n = 0, t = current; t != current || n == 0; n++, t = t->next)
 
 void TaskManager::mt(bool enable)
 {
-no_schedule = !enable;
+if(!enable)
+  no_schedule++;
+else
+ {
+  if(no_schedule == 0)
+    hal->panic("taskman: mismatching mt(false)/mt(true) call count");
+  no_schedule--;
+ }
 }
 
 void TaskManager::start()
@@ -251,7 +258,7 @@ next_index = 0;
 ticks_remaining = 0;
 scheduler_running = false;
 scheduler_started = false;
-no_schedule = true;
+no_schedule = 0;
 
 hal->idt->set_interrupt(0x20, &irq0, hal->sys_code);
 

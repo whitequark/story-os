@@ -103,7 +103,7 @@ public:
 Task* current;
 TaskManager();
 bool scheduler_running;
-bool no_schedule;
+int no_schedule;
 bool scheduler_started;
 
 bool kill(unsigned int index, unsigned int return_code = 1);

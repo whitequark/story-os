@@ -193,7 +193,6 @@ printf("%zEnabling taskswitching%z\n\n", LIGHTRED, LIGHTGRAY);
 
 hal->sti();
 hal->pic->unmask(0);
-hal->taskman->mt(true);
 hal->taskman->start();
 
 for(;;);
