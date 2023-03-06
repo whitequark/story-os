@@ -11,7 +11,7 @@ all:
 	@make -C servers
 	@make -C apps
 	@echo "  Linking        kernel"
-	@ld -melf_i386 -e start -Ttext 0x100000 $(FILES) -o output/kernel --oformat elf32-i386
+	@ld -melf_i386 -e start -Ttext 0x101000 $(FILES) -o output/kernel --oformat elf32-i386
 	
 	@expr `cat .build` + 1 > .build
 	@echo "/* include/version.h" > include/version.h

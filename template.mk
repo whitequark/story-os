@@ -19,4 +19,4 @@ SAPI=$(ROOT)/servers/api_*.o
 
 %: %.o
 	@echo "  Linking         $@"
-	@ld -melf_i386 -nostdlib -Ttext 0x10000000 $< $(LIB) $(API) $(SAPI) -o $(ROOT)/output/$@ --oformat elf32-i386
+	@ld -melf_i386 -nostdlib -Ttext 0x10001000 $< $(LIB) $(API) $(SAPI) -o $(ROOT)/output/$@ --oformat elf32-i386
