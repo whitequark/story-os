@@ -30,12 +30,18 @@ hal->panic("PURE VIRTUAL FUNCTION CALLED!!!\n");
 
 void* operator new(unsigned int size)
 {
-return kcalloc(size, 1);
+void *ptr = kcalloc(size, 1);
+if(ptr == NULL)
+ hal->panic("operator new cannot allocate\n");
+return ptr;
 }
 
 void* operator new[](unsigned int size)
 {
-return kcalloc(size, 1);
+void *ptr = kcalloc(size, 1);
+if(ptr == NULL)
+ hal->panic("operator new[] cannot allocate\n");
+return ptr;
 }
 
 void operator delete(void* p)
