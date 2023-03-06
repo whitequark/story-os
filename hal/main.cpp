@@ -1,5 +1,5 @@
 //    This file is part of the Story OS
-//    Copyright (C) 2007  Peter Zotov
+//    Copyright (C) 2007  Catherine 'whitequark'
 //
 //    Story OS is free software; you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ hal->terminal->clear();
 if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
  hal->panic("Invalid magic number! I can be booted only with multiboot bootloader, e.g. GRUB!");
 
-printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Peter Zotov\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
+printf("%zStory OS%z version %z%s (build %i)%z, (C) 2007 Catherine 'whitequark'\n", LIGHTBLUE, WHITE, LIGHTGREEN, VERSION, BUILD, WHITE);
 printf("Compiled %s, %s\n", __DATE__, __TIME__);
 textcolor(LIGHTGRAY);
 printf("Thanks to Legos, DinamytE, SadKo and all OSDev.ru community.\n\n");

@@ -28,7 +28,7 @@ all:
 	@cp COPYING disk/
 	
 	@echo "Building ISO image"
-	@mkisofs -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Peter Zotov <admin@story.osdev.ru>" -o disk.iso disk
+	@mkisofs -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -boot-info-table -iso-level 3 -r -J -input-charset koi8-r -publisher "Catherine 'whitequark' <admin@story.osdev.ru>" -o disk.iso disk
 	
 clean:
 	@find ./ -name "*.o" -exec rm {} \;
