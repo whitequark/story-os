@@ -54,7 +54,7 @@ if(table == NULL)
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
 page_mutex.unlock();
-return table->page[page & 0x3F];
+return table->page[page & 0x3FF];
 }
 
 void Paging::set_pte(PageDirectory* pagedir, unsigned int page, unsigned int value)
@@ -67,7 +67,7 @@ if(table == NULL)
  memset(table, 0, 0x1000);
  pagedir->table[page >> 10] = (unsigned int) table | PAGE_PRESENT | PAGE_WRITABLE | PAGE_USER;
  }
-table->page[page & 0x3F] = value;
+table->page[page & 0x3FF] = value;
 page_mutex.unlock();
 }
 
