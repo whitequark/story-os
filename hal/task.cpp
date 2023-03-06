@@ -168,10 +168,10 @@ task->tss->esp0 = stack_pl0;
 task->tss->esp = stack_pl3;
 task->tss->ebp = stack_pl3;
 
-task->tss->cs = hal->app_code;
-task->tss->es = hal->app_data;
-task->tss->ss = hal->app_data;
-task->tss->ds = hal->app_data;
+task->tss->cs = (pl == 0) ? hal->sys_code : hal->app_code;
+task->tss->es = (pl == 0) ? hal->sys_data : hal->app_data;
+task->tss->ss = (pl == 0) ? hal->sys_data : hal->app_data;
+task->tss->ds = (pl == 0) ? hal->sys_data : hal->app_data;
 task->tss->ss0 = hal->sys_data;
 
 task->tss->fs = 0;
