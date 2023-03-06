@@ -31,6 +31,8 @@ printf("Task %i has caused an unrecoverable error:\n", hal->taskman->current->in
 textcolor(7);
 vprintf(fmt, vl);
 
+kernel_backtrace();
+
 for(;;);
 }
 
